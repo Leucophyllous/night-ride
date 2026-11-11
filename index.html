@@ -1055,7 +1055,9 @@ function spawnDebris() {
         if (P.speed < SCRAPE_V) { P.speed *= 0.5; flashMsg(`${name}に乗り上げかけた`, '⚠️'); landed = true; z += 0; }
         else goDown(P.x >= x ? 1 : -1, `路上の落下物(${name})に乗り上げて転倒し、後続車に轢かれた`);
       }
-    } else if (Math.abs(P.x - x) < 1.0 && Math.abs(P.z - z) < 2.2 && P.speed > SCRAPE_V) endDrive(`路上の落下物(${name})に乗り上げた`, '落下物は手前で止まるか避ければ回避できた');
+    } else if (!h.hit && Math.abs(P.x - x) < 1.0 && Math.abs(P.z - z) < 2.2 && P.speed > 0.5) {   // 車は丈夫: 弾き飛ばして走り続けられる
+      h.hit = true; P.speed *= 0.92; sfx('crumble', x, 0.4, z, 1.0); flashMsg(`${name}を踏んだ`, '💥'); h.knock();
+    }
   }, knock() { x += x < -1.7 ? 0.5 : -0.5; h.x = x; } };
   addHazard(h);
 }
