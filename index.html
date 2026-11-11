@@ -1,0 +1,2950 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>無灯火ナイトライド</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,"Yu Gothic",sans-serif;color:#cfd6e4}
+  #info{position:fixed;left:12px;bottom:12px;font-size:12px;line-height:1.7;text-shadow:0 0 4px #000;pointer-events:none;max-width:70ch;color:#9aa6bd;z-index:5}
+  #info b{color:#ffcc66}
+  .card{position:fixed;z-index:6;background:rgba(6,9,16,.88);border:1px solid #2a3350;border-radius:10px;padding:16px 20px;box-shadow:0 8px 40px #000a;display:none;color:#dfe8ff}
+  #menu{left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);max-height:92vh;overflow:auto}
+  #result{right:16px;top:50%;transform:translateY(-50%);width:min(370px,92vw);max-height:92vh;overflow:auto}
+  .card h1{margin:0 0 2px;font-size:28px;color:#ffd36b;letter-spacing:.05em}
+  .card .sub{font-size:13px;color:#9aa6bd;margin-bottom:12px}
+  .card label{display:flex;gap:10px;align-items:center;font-size:14px;margin:8px 0}
+  .card input{flex:1;background:#0c1220;border:1px solid #34406a;border-radius:6px;color:#fff;padding:7px 10px;font-size:15px;min-width:0}
+  .card input[type=checkbox]{flex:none;width:auto;margin:0}
+  #warn{position:fixed;z-index:6;left:50%;top:96px;transform:translateX(-50%);display:none;pointer-events:none;background:rgba(70,14,10,.82);border:1px solid #a8442c;color:#ffd9a0;padding:8px 16px;border-radius:8px;font-size:16px;text-shadow:0 0 4px #000;white-space:nowrap}
+  .card label.br{font-size:12px;color:#9aa6bd;margin:10px 0 0}
+  .card input[type=range]{background:none;border:none;padding:0}
+  .btns{display:flex;gap:8px;margin:10px 0}
+  .btns button,.tabs button{flex:1;background:#18223d;border:1px solid #34406a;border-radius:6px;color:#dfe8ff;padding:9px 6px;font-size:14px;cursor:pointer}
+  .btns button.go{background:#1d4e8f;border-color:#3d7bd0;font-weight:700}
+  .btns button:hover,.tabs button:hover{filter:brightness(1.25)}
+  .tabs{display:flex;gap:6px;margin-top:6px}
+  .tabs button.on{background:#2b3b6b;border-color:#6d8cf0}
+  table.rk{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  table.rk td,table.rk th{padding:4px 6px;border-bottom:1px solid #1d2742;text-align:left}
+  table.rk th{color:#8ea0c8;font-weight:500}
+  table.rk .n{text-align:right;font-variant-numeric:tabular-nums}
+  table.rk tr.me td{background:#27345c;color:#fff}
+  .note{font-size:11px;color:#7d8aa8;margin-top:6px}
+  .big{font-size:34px;font-weight:800;margin:0 0 4px}
+  .bad{color:#ff6a55}.ok{color:#6fe8a8}
+  .why{font-size:15px;line-height:1.5;color:#fff;margin:2px 0}
+  .cause{font-size:13px;color:#f0c0b0;margin-bottom:6px}
+  .rkline{margin-top:10px;font-size:15px}
+  #hud{position:fixed;z-index:6;top:12px;left:50%;transform:translateX(-50%);display:none;text-align:center;text-shadow:0 0 6px #000;pointer-events:none}
+  #hud .t{font:700 36px/1 ui-monospace,Consolas,monospace;color:#ffe08a}
+  #hud .bar{width:340px;height:7px;background:#ffffff22;border-radius:4px;margin:7px auto;overflow:hidden}
+  #hud .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4fd,#8af)}
+  #hud .r{font-size:14px;color:#cfe0ff}
+  #hud .r b{color:#fff;font-variant-numeric:tabular-nums}
+  #count{position:fixed;z-index:6;left:50%;top:38%;transform:translate(-50%,-50%);font:800 120px/1 system-ui,sans-serif;color:#ffd36b;text-shadow:0 0 24px #000;display:none;pointer-events:none}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "cannon-es":"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+}}
+</script>
+</head>
+<body>
+<div id="hud"><div class="t" id="hT">0:00.00</div><div class="bar"><i id="hB"></i></div><div class="r"><b id="hD">0</b><span id="hG"> / 1000 m</span> ・ <b id="hS">0</b> km/h ・ ヒヤリ <b id="hN">0</b><span id="hW" style="color:#7fe"></span><span id="hL" style="color:#fc8"></span><span id="hSig" style="color:#9fe"></span></div></div>
+<div id="count"></div>
+<div id="warn"></div>
+<div id="menu" class="card">
+  <h1>無灯火ナイトライド</h1>
+  <div class="sub">ゴール方式: 1000mを最速で走り切るRTA ／ フリーラン: 死ぬまでにどこまで進めるかを競う</div>
+  <div class="tabs" id="diff" style="margin:0 0 6px"><button data-d="easy">やさしい</button><button data-d="normal">ふつう</button><button data-d="hard">むずかしい</button></div>
+  <div class="tabs" id="course" style="margin:0 0 6px"><button data-c="goal" class="on">ゴール方式(タイム)</button><button data-c="free">フリーラン(距離)</button></div>
+  <label>ユーザー名<input id="uname" maxlength="12" placeholder="ななし" autocomplete="off" spellcheck="false"></label>
+  <label style="font-size:12px;color:#9aa6bd"><input type="checkbox" id="optHints" checked>警戒ヒントを表示する(危険の予兆の音を文字でも知らせる)</label>
+  <div class="btns"><button id="bBike" class="go">自転車で出発 (Enter)</button><button id="bDrive" class="go">車で出発 (2)</button><button id="bDemo">デモ</button></div>
+  <div class="tabs" id="tabs"><button data-tab="bike" class="on">自転車ランキング</button><button data-tab="drive">車ランキング</button><button data-tab="stats">成績・統計</button></div>
+  <div id="tabBody"></div>
+</div>
+<div id="result" class="card"></div>
+<div id="info">
+  <b>操作</b> A/D=ハンドル W=加速 S/Space=ブレーキ <b>E=ベル/クラクション</b>(遠くから鳴らすほど、前方の人や自転車が止まりやすい) <b>X=自転車を降りる/乗る</b>(降りれば倒れた自転車や事故現場の脇を押して通過でき、右側も歩ける。Sで後退) <b>車はSを止まって押し続けるとバック</b> B=後ろを向く V=後続車視点(自転車) ドラッグ=見回し <b>Q/R/F=手信号</b>(左/右/停止。片手運転で操作は鈍るが、周囲の車が気付いて事故が少し減る) 車: 時速30km以下なら飛び出しは起きない・対向車線は5秒まで<br>
+  <b>自転車</b>: 白線の外側(左端)を走る。止まれ・赤信号は守る。左の歩道も走れる(徐行のみ・縁石へは深い角度で。ガードパイプのある所は入れない) ／ <b>車</b>: 赤信号は止まる。自転車や歩行者が「回避不可能」な形で現れる
+</div>
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================
+   基本セットアップ
+   ===================================================================== */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+
+const FOGC = 0x070910;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(FOGC);
+scene.fog = new THREE.FogExp2(FOGC, 0.021);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, 400);
+const rig = new THREE.Group();
+rig.add(camera); scene.add(rig);
+camera.position.set(0, 1.5, 0);
+const hemi = new THREE.HemisphereLight(0x2c3860, 0x0a0a10, 0.55); scene.add(hemi);
+const moon = new THREE.DirectionalLight(0x8fa4d8, 0.14); moon.position.set(-30, 60, 20); scene.add(moon);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pick = arr => arr[(Math.random() * arr.length) | 0];
+
+/* =====================================================================
+   テクスチャ / マテリアル
+   ===================================================================== */
+function canvasTex(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
+}
+function radialTex(stops) {
+  return canvasTex(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    stops.forEach(([o, col]) => gr.addColorStop(o, col));
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  });
+}
+const glowTex = radialTex([[0, 'rgba(255,255,255,1)'], [0.2, 'rgba(255,255,255,.6)'], [1, 'rgba(255,255,255,0)']]);
+const poolTex = radialTex([[0, 'rgba(255,255,255,.9)'], [0.5, 'rgba(255,255,255,.35)'], [1, 'rgba(255,255,255,0)']]);
+
+function drawAsphalt(g, w, h) {
+  g.fillStyle = '#4a4a4e'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 14000; i++) {
+    const v = 40 + Math.random() * 90 | 0;
+    g.fillStyle = `rgba(${v},${v},${v + 4},${0.25 + Math.random() * 0.5})`;
+    g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 1.5, 1 + Math.random() * 1.5);
+  }
+  g.strokeStyle = 'rgba(15,15,18,.55)'; g.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {            // ひび割れ・補修跡
+    g.beginPath(); let x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y);
+    for (let k = 0; k < 8; k++) { x += rnd(-22, 22); y += rnd(-22, 22); g.lineTo(x, y); }
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(25,25,28,.35)'; g.fillRect(rnd(0, w - 60), rnd(0, h - 90), 60, 90);
+}
+const asphaltA = canvasTex(256, 256, drawAsphalt, [3, 16]);
+const asphaltB = canvasTex(256, 256, drawAsphalt, [50, 3]);
+const roadMat = new THREE.MeshStandardMaterial({ map: asphaltA, roughness: 0.55, metalness: 0.05, color: 0x9a9aa0 });
+const crossMat = new THREE.MeshStandardMaterial({ map: asphaltB, roughness: 0.55, metalness: 0.05, color: 0x9a9aa0 });
+const tileTex = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#6a6a6e'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1500; i++) { const v = 70 + Math.random() * 60 | 0; g.fillStyle = `rgba(${v},${v},${v},.4)`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  g.strokeStyle = 'rgba(30,30,32,.9)'; g.lineWidth = 2; g.strokeRect(0, 0, w, h); g.strokeRect(0, 0, w / 2, h / 2); g.strokeRect(w / 2, h / 2, w / 2, h / 2);
+}, [2, 40]);
+const sideMat = new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.9, color: 0x8c8c90 });
+const curbMat = new THREE.MeshStandardMaterial({ color: 0x77777a, roughness: 0.85 });
+const whiteMat = new THREE.MeshStandardMaterial({ color: 0xd6d6d0, roughness: 0.6, emissive: 0x16161a });
+const orangeMat = new THREE.MeshStandardMaterial({ color: 0xd08a1e, roughness: 0.6, emissive: 0x120a02 });
+const zebraTex = canvasTex(256, 64, (g, w, h) => {
+  g.clearRect(0, 0, w, h); g.fillStyle = '#d8d8d2';
+  for (let x = 6; x < w; x += 36) g.fillRect(x, 0, 18, h);
+});
+const zebraMat = new THREE.MeshStandardMaterial({ map: zebraTex, transparent: true, roughness: 0.6, emissive: 0x16161a, polygonOffset: true, polygonOffsetFactor: -2 });
+
+// ビルの外壁(窓明かり付き)
+function makeFacade() {
+  const wall = pick(['#3b3d42', '#4a4640', '#35393f', '#514b47', '#2f3338', '#44403d']);
+  const lit = [];
+  const map = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = wall; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; g.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
+    g.fillStyle = 'rgba(0,0,0,.25)'; for (let r = 0; r <= 4; r++) g.fillRect(0, r * 64 - 2, w, 3);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      const x = c * 64 + 12, y = r * 64 + 14, on = Math.random() < 0.16;
+      g.fillStyle = '#1b1d22'; g.fillRect(x - 2, y - 2, 44, 40);
+      if (on) { const col = pick(['#ffd9a0', '#ffe6bd', '#cfe6ff', '#fff3d6']); lit.push([x, y, col]); g.fillStyle = col; }
+      else g.fillStyle = '#0a0d13';
+      g.fillRect(x, y, 40, 36);
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x + 19, y, 2, 36);
+      if (on && Math.random() < 0.5) { g.fillStyle = 'rgba(60,40,30,.55)'; g.fillRect(x, y, 14, 36); }
+    }
+  });
+  const emis = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    for (const [x, y, col] of lit) { g.fillStyle = col; g.fillRect(x, y, 40, 36); g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x + 19, y, 2, 36); }
+  });
+  return { map, emis };
+}
+const facades = Array.from({ length: 8 }, makeFacade);
+const facadeCache = new Map();      // 建物ごとに作ると増え続けてQuestで落ちるので使い回す
+function facadeMat(d, h) {
+  const fi = (Math.random() * facades.length) | 0, dq = Math.max(1, Math.round(d / 4)), hq = Math.max(1, Math.round(h / 5)), key = fi + '_' + dq + '_' + hq;
+  let mat = facadeCache.get(key);
+  if (!mat) {
+    const f = facades[fi], m = f.map.clone(), e = f.emis.clone();
+    for (const t of [m, e]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(dq * 4 / 9, hq * 5 / 11); t.needsUpdate = true; }
+    mat = new THREE.MeshStandardMaterial({ map: m, emissiveMap: e, emissive: 0xffffff, emissiveIntensity: 0.9, roughness: 0.9 });
+    facadeCache.set(key, mat);
+  }
+  return mat;
+}
+
+const spriteMats = {};
+function glow(color, size, opacity = 1) {
+  const k = color + '_' + opacity;
+  spriteMats[k] ||= new THREE.SpriteMaterial({ map: glowTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false, opacity });
+  const s = new THREE.Sprite(spriteMats[k]); s.scale.set(size, size, 1); return s;
+}
+const goalBannerMat = new THREE.MeshBasicMaterial({ fog: false, map: canvasTex(512, 96, (g, w, h) => {
+  g.fillStyle = '#06301f'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#fff';
+  for (let x = 0; x < w; x += 24) for (let r = 0; r < 2; r++) if ((x / 24 + r) % 2 === 0) { g.fillRect(x, r * 12, 24, 12); g.fillRect(x, h - 24 + r * 12, 24, 12); }
+  g.fillStyle = '#7fffc8'; g.font = 'bold 60px sans-serif'; g.textAlign = 'center'; g.fillText('GOAL', w / 2, 66);
+}) });
+const checkerMat = new THREE.MeshBasicMaterial({ map: canvasTex(128, 32, (g, w, h) => {
+  for (let x = 0; x < 8; x++) for (let y = 0; y < 2; y++) { g.fillStyle = (x + y) % 2 ? '#111' : '#eee'; g.fillRect(x * 16, y * 16, 16, 16); }
+}), polygonOffset: true, polygonOffsetFactor: -2 });
+const stopTex = canvasTex(128, 128, (g, w, h) => {
+  g.clearRect(0, 0, w, h);                                           // 日本の「止まれ」: 赤い逆三角形(▼)に白縁
+  g.lineJoin = 'round'; g.fillStyle = '#c4161c'; g.beginPath(); g.moveTo(6, 14); g.lineTo(122, 14); g.lineTo(64, 120); g.closePath(); g.fill();
+  g.strokeStyle = '#fff'; g.lineWidth = 7; g.stroke();
+  g.fillStyle = '#fff'; g.font = 'bold 27px "Yu Gothic",sans-serif'; g.textAlign = 'center'; g.fillText('止まれ', 64, 52);
+});
+const stopSignMat = new THREE.MeshStandardMaterial({ map: stopTex, emissiveMap: stopTex, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.5, transparent: true, alphaTest: 0.4 });
+const stopTriShape = new THREE.Shape(); stopTriShape.moveTo(-0.45, 0.39); stopTriShape.lineTo(0.45, 0.39); stopTriShape.lineTo(0, -0.46); stopTriShape.closePath();
+const stopBackGeo = new THREE.ShapeGeometry(stopTriShape);
+const stopTextTex = canvasTex(64, 128, (g, w, h) => { g.fillStyle = '#d8d8d2'; g.font = 'bold 34px "Yu Gothic",sans-serif'; g.textAlign = 'center'; ['止', 'ま', 'れ'].forEach((c, i) => g.fillText(c, 32, 38 + i * 40)); });
+const stopTextMat = new THREE.MeshStandardMaterial({ map: stopTextTex, transparent: true, roughness: 0.6, emissive: 0x16161a, polygonOffset: true, polygonOffsetFactor: -2 });
+const poleMat = new THREE.MeshStandardMaterial({ color: 0x4a4b50, roughness: 0.6, metalness: 0.5 });
+const concMat = new THREE.MeshStandardMaterial({ color: 0x6d6a64, roughness: 0.95 });
+const railMat = new THREE.MeshStandardMaterial({ color: 0xc8c8c4, roughness: 0.5, metalness: 0.3 });
+const lampOn = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
+const lampOff = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: 0xfff0c0, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.28 });
+const lampPoolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: 0xffb060, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.16 });
+const vendTex = canvasTex(64, 128, (g, w, h) => {
+  g.fillStyle = '#e8eef5'; g.fillRect(0, 0, w, h); g.fillStyle = '#c22'; g.fillRect(0, 0, w, 14);
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) { g.fillStyle = pick(['#d33', '#2a6', '#36c', '#da2', '#222', '#fff']); g.fillRect(5 + c * 11, 22 + r * 24, 8, 16); }
+  g.fillStyle = '#9aa'; g.fillRect(6, 100, 52, 20);
+});
+const vendMat = new THREE.MeshBasicMaterial({ map: vendTex });
+const unitBox = new THREE.BoxGeometry(1, 1, 1);
+const unitPlane = new THREE.PlaneGeometry(1, 1);
+const unitCyl = new THREE.CylinderGeometry(1, 1, 1, 8);
+function box(mat, w, h, d, x, y, z, parent) {
+  const m = new THREE.Mesh(unitBox, mat); m.scale.set(w, h, d); m.position.set(x, y, z); parent.add(m); return m;
+}
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+function setTube(m, a, b, r) {
+  _a.set(a[0], a[1], a[2]); _b.set(b[0], b[1], b[2]);
+  const len = _a.distanceTo(_b);
+  m.position.copy(_a).add(_b).multiplyScalar(0.5);
+  m.scale.set(r, len, r);
+  m.quaternion.setFromUnitVectors(_up, _b.sub(_a).normalize());
+}
+function tube(a, b, r, mat, parent) { const m = new THREE.Mesh(unitCyl, mat); setTube(m, a, b, r); parent.add(m); return m; }
+
+// 夜空
+let sky;
+{
+  const skyTex = canvasTex(1024, 512, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, '#01020a'); gr.addColorStop(0.42, '#050818'); gr.addColorStop(0.5, '#0d0f1c'); gr.addColorStop(0.52, '#070910'); gr.addColorStop(1, '#070910');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.8})`; const s = Math.random() < 0.08 ? 2 : 1; g.fillRect(Math.random() * w, Math.random() * h * 0.44, s, s); }
+  });
+  sky = new THREE.Mesh(new THREE.SphereGeometry(350, 24, 16), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
+  sky.renderOrder = -10; scene.add(sky);
+  const m = glow(0xdfe6ff, 26, 0.9); m.position.set(-120, 150, -260); sky.add(m);
+}
+
+/* =====================================================================
+   道路
+   ===================================================================== */
+const CL = 40, AHEAD = 9, BEHIND = 3;
+const LANE = 1.75;            // 車線中央
+const EDGE = -2.6;            // 路側帯の白線
+const STOPD = 6.2;            // 交差点中心から停止線まで
+const interType = i => (i >= 3 && i % 3 === 0) ? (i % 6 === 0 ? 'signal' : 'plain') : null;
+const chunkZ = i => -i * CL;
+const chunks = new Map();
+let T = 0;                    // ゲーム内時刻
+const sigState = (i, t = T) => { const p = (t + i * 5) % 24; return p < 12 ? 'g' : p < 15 ? 'y' : 'r'; };
+const crossFlow = i => { const p = (T + i * 5) % 24; return p > 15.5 && p < 17.6; };
+
+function buildSignalHead(g, x, z, rotY) {
+  const h = new THREE.Group(); h.position.set(x, 5.4, z); h.rotation.y = rotY; g.add(h);
+  box(poleMat, 1.3, 0.42, 0.2, 0, 0, -0.11, h);
+  const lamps = {};
+  [['g', -0.42, 0x19ffb0], ['y', 0, 0xffc21a], ['r', 0.42, 0xff2a1a]].forEach(([k, lx, col]) => {
+    const m = new THREE.Mesh(new THREE.CircleGeometry(0.15, 16), new THREE.MeshBasicMaterial({ color: 0x111111, fog: false }));
+    m.position.set(lx, 0, 0.001); h.add(m);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
+    s.scale.set(1.5, 1.5, 1); s.position.set(lx, 0, 0.05); h.add(s);
+    lamps[k] = { m, s, col };
+  });
+  return lamps;
+}
+function buildChunk(i) {
+  const g = new THREE.Group(); g.position.z = chunkZ(i);
+  const type = interType(i), inter = !!type;
+  box(roadMat, 7, 0.1, CL, 0, -0.05, 0, g);
+  const ranges = inter ? [[-20, -4], [4, 20]] : [[-20, 20]];
+  if (inter) {
+    box(crossMat, 140, 0.1, 8, 0, -0.045, 0, g);
+    for (const s of [-1, 1]) {
+      const zb = new THREE.Mesh(unitPlane, zebraMat); zb.rotation.x = -Math.PI / 2; zb.scale.set(6.6, 2.0, 1); zb.position.set(0, 0.012, s * 4.9); g.add(zb);
+    }
+    box(whiteMat, 3.3, 0.012, 0.4, -1.75, 0.006, STOPD + 0.2, g);
+    box(whiteMat, 3.3, 0.012, 0.4, 1.75, 0.006, -STOPD - 0.2, g);
+  }
+  for (const [a, b] of inter ? [[-20, -6.6], [6.6, 20]] : [[-20, 20]]) {
+    box(orangeMat, 0.14, 0.012, b - a, 0, 0.006, (a + b) / 2, g);
+    box(whiteMat, 0.13, 0.012, b - a, EDGE, 0.006, (a + b) / 2, g);
+    box(whiteMat, 0.13, 0.012, b - a, -EDGE, 0.006, (a + b) / 2, g);
+  }
+  for (const s of [-1, 1]) {
+    for (const [a, b] of ranges) {
+      box(sideMat, 1.5, 0.16, b - a, s * 4.3, 0.08, (a + b) / 2, g);
+      box(curbMat, 0.16, 0.2, b - a, s * 3.52, 0.1, (a + b) / 2, g);
+      let zc = a;
+      while (zc < b - 3) {
+        const d = Math.min(rnd(7, 13), b - zc), w = rnd(8, 14), h = rnd(6, 22);
+        if (Math.random() < 0.18 && !inter) {     // ブロック塀の家
+          box(concMat, 0.2, 1.7, d, s * 5.15, 0.85, zc + d / 2, g);
+          box(facadeMat(d * 0.7, 6), w, 6, d * 0.7, s * (7.5 + w / 2), 3, zc + d / 2, g);
+        } else box(facadeMat(d, h), w, h, d, s * (5.05 + w / 2), h / 2, zc + d / 2, g);
+        zc += d;
+      }
+    }
+  }
+  // ガードパイプ(交差点付近は必ず。歩道へ入れず、左に逃げ場がない)
+  const railOn = inter || Math.random() < 0.3;
+  if (railOn) g.userData.rail = ranges;
+  if (railOn) for (const [a, b] of ranges) {
+    for (const y of [0.55, 0.9]) box(railMat, 0.05, 0.05, b - a - 0.6, -3.66, y, (a + b) / 2, g);
+    for (let z = a + 0.4; z < b; z += 3) box(railMat, 0.06, 0.95, 0.06, -3.66, 0.47, z, g);
+  }
+  // 街灯: 車道の左端にはみ出して立っている(当たると死亡)。半分は切れている
+  const lz = inter ? (Math.random() < 0.5 ? -1 : 1) * rnd(8, 16) : rnd(-16, 16), broken = Math.random() < 0.5;
+  const px = rnd(-4.2, -3.9);        // 街灯は歩道側に立つ(車道の左端は安全に走れる。歩道走行では注意)
+  const pole = new THREE.Mesh(unitCyl, poleMat); pole.scale.set(0.09, 5.6, 0.09); pole.position.set(px, 2.8, lz); g.add(pole);
+  const lampMeshes = [pole, box(poleMat, 1.3, 0.08, 0.08, px + 0.65, 5.5, lz, g), box(broken ? lampOff : lampOn, 0.5, 0.1, 0.22, px + 1.3, 5.42, lz, g)];
+  if (!broken) {
+    const s = glow(0xffcc88, 3.6, 0.4); s.position.set(px + 1.3, 5.35, lz); g.add(s);
+    const pl = new THREE.Mesh(unitPlane, lampPoolMat); pl.rotation.x = -Math.PI / 2; pl.scale.set(11, 11, 1); pl.position.set(px + 1.3, 0.02, lz); g.add(pl);
+    g.userData.lamp = { x: px + 1.3, z: chunkZ(i) + lz };
+    lampMeshes.push(s, pl);
+  }
+  g.userData.pole = { x: px, z: chunkZ(i) + lz, meshes: lampMeshes };
+  // 電柱と電線(右側)
+  const ez = inter ? 12 : rnd(-15, 15);
+  const ep = new THREE.Mesh(unitCyl, concMat); ep.scale.set(0.14, 8.5, 0.14); ep.position.set(3.75, 4.25, ez); g.add(ep);
+  g.userData.upole = { x: 3.75, z: chunkZ(i) + ez, meshes: [ep, box(poleMat, 1.6, 0.08, 0.08, 3.75, 7.9, ez, g)] };
+  const cols = g.userData.cols = [];          // 道端の固定物の当たり判定(自転車・歩行・NPCの車が貫通しない)
+  for (const [wx, wy] of [[3.1, 7.95], [4.4, 7.95], [3.75, 6.9]]) box(lampOff, 0.02, 0.02, CL, wx, wy, 0, g);
+  // 自販機
+  if (!inter && Math.random() < 0.3) {
+    const vz = rnd(-16, 16);
+    box(vendMat, 0.7, 1.8, 1.0, 4.7, 1.06, vz, g).rotation.y = 0; cols.push({ x: 4.7, z: chunkZ(i) + vz, hx: 0.45, hz: 0.6, t: '自動販売機' });
+    const vf = new THREE.Mesh(unitPlane, vendMat); vf.scale.set(1.0, 1.8, 1); vf.rotation.y = -Math.PI / 2; vf.position.set(4.34, 1.06, vz); g.add(vf);
+    const s = glow(0xcfe4ff, 3.0, 0.3); s.position.set(4.2, 1.2, vz); g.add(s);
+    const pl = new THREE.Mesh(unitPlane, poolMat); pl.rotation.x = -Math.PI / 2; pl.scale.set(4, 5, 1); pl.position.set(3.2, 0.2, vz); g.add(pl);
+  }
+  if (type === 'signal') {
+    box(poleMat, 0.14, 5.8, 0.14, -3.8, 2.9, -5.6, g); box(poleMat, 2.6, 0.1, 0.1, -2.6, 5.7, -5.6, g);
+    box(poleMat, 0.14, 5.8, 0.14, 3.8, 2.9, 5.6, g); box(poleMat, 2.6, 0.1, 0.1, 2.6, 5.7, 5.6, g);
+    cols.push({ x: -3.8, z: chunkZ(i) - 5.6, hx: 0.15, hz: 0.15, t: '信号機の柱' }, { x: 3.8, z: chunkZ(i) + 5.6, hx: 0.15, hz: 0.15, t: '信号機の柱' });
+    g.userData.sig = { i, heads: [buildSignalHead(g, -1.6, -5.5, 0), buildSignalHead(g, 1.6, 5.5, Math.PI)], streamT: 0 };
+  }
+  if (P.course !== 'free' && i === GOAL / CL) {       // ゴールゲート(遠くからでも見える。フリーランには無い)
+    for (const s of [-1, 1]) box(poleMat, 0.3, 6.2, 0.3, s * 4.5, 3.1, 0, g);
+    box(poleMat, 9.3, 0.3, 0.3, 0, 6.3, 0, g);
+    const bn = new THREE.Mesh(unitPlane, goalBannerMat); bn.scale.set(8.4, 1.5, 1); bn.position.set(0, 5.4, 0); g.add(bn);
+    const bn2 = bn.clone(); bn2.rotation.y = Math.PI; g.add(bn2);
+    const ln = new THREE.Mesh(unitPlane, checkerMat); ln.rotation.x = -Math.PI / 2; ln.scale.set(7, 1.2, 1); ln.position.set(0, 0.015, 0); g.add(ln);
+    const gl = glow(0x66ffcc, 16, 0.5); gl.position.set(0, 5.4, 0); g.add(gl);
+  }
+  if (type === 'plain') {      // 止まれの標識(左の歩道側、停止線の手前)
+    box(poleMat, 0.07, 2.4, 0.07, -3.95, 1.2, STOPD + 2.2, g); cols.push({ x: -3.95, z: chunkZ(i) + STOPD + 2.2, hx: 0.1, hz: 0.1, t: '止まれの標識' });
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), stopSignMat); sg.position.set(-3.95, 2.35, STOPD + 2.27); g.add(sg);
+    const sb = new THREE.Mesh(stopBackGeo, poleMat); sb.rotation.set(0, Math.PI, 0); sb.position.set(-3.95, 2.35, STOPD + 2.16); g.add(sb);
+    const tx = new THREE.Mesh(unitPlane, stopTextMat); tx.rotation.x = -Math.PI / 2; tx.scale.set(0.9, 1.6, 1); tx.position.set(-1.75, 0.013, STOPD + 2.3); g.add(tx);   // 路面の「止まれ」
+  }
+  scene.add(g);
+  return g;
+}
+function disposeChunk(g) {
+  scene.remove(g);
+  g.traverse(o => { if (o.isMesh && o.userData.ownGeo) o.geometry.dispose(); });
+}
+function ensureChunks(pz) {
+  const pi = Math.round(-pz / CL);
+  for (let i = pi - BEHIND; i <= pi + AHEAD; i++) if (!chunks.has(i)) chunks.set(i, buildChunk(i));
+  for (const [i, g] of chunks) if (i < pi - BEHIND || i > pi + AHEAD) { disposeChunk(g); chunks.delete(i); }
+}
+function updateSignals(dt) {
+  for (const g of chunks.values()) {
+    const sg = g.userData.sig; if (!sg) continue;
+    const st = sigState(sg.i);
+    for (const h of sg.heads) for (const k of ['g', 'y', 'r']) {
+      const on = k === st; h[k].m.material.color.setHex(on ? h[k].col : 0x111111); h[k].s.visible = on;
+    }
+    // 主道路が赤の間、交差道路の車が流れる
+    sg.streamT -= dt;
+    if (P.state !== 'title' && crossFlow(sg.i) && sg.streamT <= 0 && cars.length < 13 && Math.abs(chunkZ(sg.i) - P.z) < 130) {
+      sg.streamT = rnd(0.9, 2.2);
+      const side = Math.random() < 0.5 ? -1 : 1;
+      addCar(side * 55, chunkZ(sg.i) + (side > 0 ? 2 : -2), side * Math.PI / 2, 10, 'stream');
+    }
+  }
+}
+// 次の信号の停止線。dir=-1: -z方向へ進む車。戻り値 {i, s(停止線までの距離)}
+function nextSignal(frontZ, dir) {
+  if (dir < 0) { const k = Math.max(1, Math.ceil((-frontZ + STOPD) / 240)); return { i: k * 6, s: frontZ - (-240 * k + STOPD) }; }
+  const k = Math.floor((-frontZ - STOPD) / 240); if (k < 1) return null;
+  return { i: k * 6, s: (-240 * k - STOPD) - frontZ };
+}
+function findInter(type, minD, maxD) {
+  const base = Math.floor(-P.z / CL);
+  for (let i = base + 1; i < base + 9; i++) {
+    const d = P.z - chunkZ(i);
+    if (interType(i) === type && d >= minD && d <= maxD) return { i, cz: chunkZ(i), d };
+  }
+  return null;
+}
+
+/* =====================================================================
+   オーディオ
+   ===================================================================== */
+let actx = null, windGain = null;
+function initAudio() {
+  if (actx) return;
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  actx = new AC();
+  const len = actx.sampleRate * 2, buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = actx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 0.6;
+  windGain = actx.createGain(); windGain.gain.value = 0;
+  src.connect(bp).connect(windGain).connect(actx.destination); src.start();
+}
+function setPanner(p, x, y, z) {
+  if (p.positionX) { p.positionX.value = x; p.positionY.value = y; p.positionZ.value = z; } else p.setPosition(x, y, z);
+}
+function attachEngine(car) {
+  if (!actx) return;
+  const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 60;
+  const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = car.type === 'truck' ? 260 : 420;
+  const gn = actx.createGain(); gn.gain.value = car.type === 'truck' ? 0.8 : 0.5;
+  const p = actx.createPanner(); p.panningModel = 'HRTF'; p.distanceModel = 'inverse'; p.refDistance = 5; p.rolloffFactor = 1.5;
+  o.connect(lp).connect(gn).connect(p).connect(actx.destination); o.start();
+  car.snd = { o, p, base: car.type === 'truck' ? rnd(34, 42) : rnd(48, 64) };
+}
+function killEngine(car) { if (!car.snd) return; try { car.snd.o.stop(); car.snd.p.disconnect(); } catch (e) {} car.snd = null; }
+// 車のクラクション: 2音(約415Hz+523Hz)の電気式ホーン。のこぎり波の倍音に、振動板のビビリ(AM)と2音の微妙なうなり、
+// 立ち上がり(約25ms)と鳴り止みの減衰、スピーカー的な帯域の山をつけて、プーッという実物に近い音にする。
+function hornVoices(dest, t, dur, g = 0.35) {
+  const mix = actx.createGain();
+  mix.gain.setValueAtTime(0.0001, t); mix.gain.exponentialRampToValueAtTime(g, t + 0.025);
+  mix.gain.setValueAtTime(g, Math.max(t + 0.03, t + dur - 0.07)); mix.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 1.1;
+  const pk = actx.createBiquadFilter(); pk.type = 'peaking'; pk.frequency.value = 1150; pk.gain.value = 5; pk.Q.value = 1.4;
+  mix.connect(lp).connect(pk).connect(dest);
+  for (const f of [415, 523]) for (const d of [1, 1.006]) {
+    const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f * d;
+    const og = actx.createGain(); og.gain.value = 0.5; o.connect(og).connect(mix); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const am = actx.createOscillator(); am.frequency.value = 96; const ag = actx.createGain(); ag.gain.value = g * 0.12;       // 振動板のビビリ
+  am.connect(ag).connect(mix.gain); am.start(t); am.stop(t + dur + 0.05);
+}
+function horn(car) {
+  if (!actx || !car.snd) return;
+  hornVoices(car.snd.p, actx.currentTime, 0.8, 0.5);
+}
+function noiseBurst(dur, gain, pow) {
+  if (!actx) return;
+  const nb = actx.createBuffer(1, actx.sampleRate * dur, actx.sampleRate), nd = nb.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nd.length, pow);
+  const ns = actx.createBufferSource(); ns.buffer = nb;
+  const gn = actx.createGain(); gn.gain.value = gain; ns.connect(gn).connect(actx.destination); ns.start();
+}
+function crashSound() {
+  if (!actx) return;
+  const t = actx.currentTime, gn = actx.createGain();
+  gn.gain.setValueAtTime(0.9, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 1.1); gn.connect(actx.destination);
+  const o = actx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.6);
+  o.connect(gn); o.start(t); o.stop(t + 1.1);
+  noiseBurst(0.5, 0.8, 1);
+}
+const smashSound = () => noiseBurst(0.25, 0.5, 3);
+// 位置付きの効果音(危険の予兆を音で知らせる)。耳を澄ませば避けられるようにしてある
+function sfx(kind, x, y, z, gain = 0.6, delay = 0) {
+  if (!actx || actx.state !== 'running') return;
+  const t = actx.currentTime + delay, out = actx.createGain(); out.gain.value = gain;
+  const pn = actx.createPanner(); pn.panningModel = 'HRTF'; pn.distanceModel = 'inverse'; pn.refDistance = 4; pn.rolloffFactor = 1.1; setPanner(pn, x, y, z);
+  out.connect(pn).connect(actx.destination);
+  const noise = (dur, type, f, q = 1, at = 0, g = 1) => {
+    const n = Math.max(1, (actx.sampleRate * dur) | 0), b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const s = actx.createBufferSource(); s.buffer = b;
+    const fl = actx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q;
+    const gn = actx.createGain(); gn.gain.setValueAtTime(g, t + at); gn.gain.exponentialRampToValueAtTime(0.001, t + at + dur);
+    s.connect(fl).connect(gn).connect(out); s.start(t + at);
+  };
+  const tone = (type, f0, f1, dur, at = 0, g = 1) => {
+    const o = actx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t + at);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + at + dur);
+    const gn = actx.createGain(); gn.gain.setValueAtTime(g, t + at); gn.gain.exponentialRampToValueAtTime(0.001, t + at + dur);
+    o.connect(gn).connect(out); o.start(t + at); o.stop(t + at + dur + 0.02);
+  };
+  switch (kind) {
+    case 'rumble': noise(1.6, 'lowpass', 120, 1, 0, 2.5); tone('sine', 48, 32, 1.6, 0, 1.2); break;
+    case 'gravel': for (let k = 0; k < 5; k++) noise(0.12, 'bandpass', 1200 + Math.random() * 1500, 2, k * 0.11, 0.7); break;
+    case 'crumble': noise(1.2, 'lowpass', 400, 1, 0, 3); tone('sine', 70, 28, 1.0, 0, 1.5); break;
+    case 'click': tone('square', 2600, 1900, 0.03, 0, 0.6); tone('square', 2200, 1700, 0.03, 0.12, 0.6); break;
+    case 'rattle': for (let k = 0; k < 4; k++) noise(0.07, 'bandpass', 1500 + k * 450, 5, k * 0.13, 0.8); break;
+    case 'whoosh': noise(0.7, 'highpass', 1400, 0.7, 0, 0.8); break;
+    case 'rustle': for (let k = 0; k < 4; k++) noise(0.2, 'bandpass', 3000 + Math.random() * 1200, 1.2, k * 0.17, 0.5); break;
+    case 'growl': tone('sawtooth', 95, 55, 0.7, 0, 0.8); noise(0.5, 'lowpass', 500, 1, 0, 0.6); break;
+    case 'cry': tone('triangle', 520, 880, 0.5, 0, 0.8); tone('triangle', 880, 640, 0.35, 0.5, 0.7); break;
+    case 'step': noise(0.09, 'lowpass', 300, 1, 0, 1.2); break;
+    case 'chime': tone('sine', 880, 880, 0.18, 0, 0.8); tone('sine', 1320, 1320, 0.25, 0.16, 0.8); break;
+    case 'squeak': tone('sine', 1700, 2300, 0.09, 0, 0.5); noise(0.05, 'bandpass', 3500, 4, 0, 0.6); break;
+    case 'bell': {                          // 自転車のベル: 打撃のカチッ+ベル特有の非整数倍の部分音がうなりながら減衰する。「チリンチリン」の2打
+      const f0 = 2350 * (0.97 + Math.random() * 0.06);
+      const strike = (at, g) => {
+        [[1, 1.0, 0.75], [2.76, 0.55, 0.4], [5.4, 0.3, 0.22], [8.93, 0.15, 0.12]].forEach(([r, a, dec]) => { for (const d of [1, 1.004]) tone('sine', f0 * r * d, f0 * r * d, dec, at, 0.45 * a * g); });
+        noise(0.025, 'highpass', 4000, 1, at, 0.5 * g);
+      };
+      strike(0, 1); strike(0.2, 0.8); break;
+    }
+    case 'scream': {                        // 上の階からの悲鳴: のこぎり波を声道のフォルマント(「あ」)で整形し、ビブラートと息を加える
+      const pf = 0.8 + Math.random() * 0.4, dur = 1.25;
+      const o = actx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(520 * pf, t); o.frequency.exponentialRampToValueAtTime(980 * pf, t + 0.18); o.frequency.exponentialRampToValueAtTime(860 * pf, t + dur);
+      const lfo = actx.createOscillator(); lfo.frequency.value = 6.5; const lg = actx.createGain(); lg.gain.value = 22; lfo.connect(lg).connect(o.frequency);
+      const env = actx.createGain();
+      env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(0.9, t + 0.06); env.gain.setValueAtTime(0.9, t + 0.7); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      for (const [f, q, g] of [[850, 8, 1.0], [1250, 10, 0.7], [2900, 12, 0.4]]) {
+        const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
+        const bg = actx.createGain(); bg.gain.value = g; o.connect(bp).connect(bg).connect(env);
+      }
+      env.connect(out); o.start(t); o.stop(t + dur + 0.05); lfo.start(t); lfo.stop(t + dur + 0.1);
+      noise(dur, 'bandpass', 3000, 0.8, 0, 0.12);
+      break;
+    }
+    case 'beep': tone('square', 1000, 1000, 0.16, 0, 0.5); break;
+    case 'creak': tone('sawtooth', 160, 70, 0.9, 0, 0.5); noise(0.7, 'bandpass', 500, 3, 0, 0.5); break;
+    case 'horn': hornVoices(out, t, 0.55, 0.5); break;
+    case 'skid': noise(0.9, 'bandpass', 2400, 2, 0, 1.2); tone('sawtooth', 700, 1400, 0.8, 0, 0.25); break;
+    case 'rev': tone('sawtooth', 70, 230, 1.0, 0, 0.9); noise(0.9, 'lowpass', 600, 1, 0, 0.5); break;
+  }
+}
+const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _f = new THREE.Vector3(), _u = new THREE.Vector3();
+function updateListener() {
+  if (!actx) return;
+  camera.getWorldPosition(_p); camera.getWorldQuaternion(_q);
+  _f.set(0, 0, -1).applyQuaternion(_q); _u.set(0, 1, 0).applyQuaternion(_q);
+  const l = actx.listener;
+  if (l.positionX) {
+    l.positionX.value = _p.x; l.positionY.value = _p.y; l.positionZ.value = _p.z;
+    l.forwardX.value = _f.x; l.forwardY.value = _f.y; l.forwardZ.value = _f.z;
+    l.upX.value = _u.x; l.upY.value = _u.y; l.upZ.value = _u.z;
+  } else { l.setPosition(_p.x, _p.y, _p.z); l.setOrientation(_f.x, _f.y, _f.z, _u.x, _u.y, _u.z); }
+}
+
+/* =====================================================================
+   車両モデル
+   ===================================================================== */
+function profileGeo(pts, width) {
+  const s = new THREE.Shape(); pts.forEach(([u, y], i) => i ? s.lineTo(u, y) : s.moveTo(u, y));
+  const g = new THREE.ExtrudeGeometry(s, { depth: width, bevelEnabled: false });
+  g.rotateY(-Math.PI / 2); g.translate(width / 2, 0, 0); return g;
+}
+const sedanGeo = profileGeo([[-2.2, 0.3], [-2.2, 0.72], [-1.15, 0.86], [-0.55, 1.38], [0.85, 1.4], [1.6, 0.95], [2.2, 0.9], [2.2, 0.3]], 1.76);
+const sedanGlassGeo = profileGeo([[-1.17, 0.9], [-0.6, 1.385], [0.83, 1.39], [1.62, 0.99]], 1.78);
+const wheelGeo = new THREE.CylinderGeometry(1, 1, 1, 16); wheelGeo.rotateZ(Math.PI / 2);
+const tireMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0d, roughness: 0.9 });
+const glassMat = new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 0.08, metalness: 0.9 });
+const headMatOn = new THREE.MeshBasicMaterial({ color: 0xfff6dc }), tailMatOn = new THREE.MeshBasicMaterial({ color: 0xff2010 });
+const headMatOff = new THREE.MeshStandardMaterial({ color: 0x555860, roughness: 0.2, metalness: 0.8 }), tailMatOff = new THREE.MeshStandardMaterial({ color: 0x3a0806, roughness: 0.3 });
+const plateMat = new THREE.MeshStandardMaterial({ color: 0xd8d8d0, roughness: 0.6, emissive: 0x111111 });
+const carColors = [0xd0d2d6, 0x8a8d92, 0x15161a, 0x1b2740, 0x6e1414, 0x3d4046, 0xb8b0a0];
+function makeCarMesh(type, lit) {
+  const g = new THREE.Group();
+  const bm = new THREE.MeshStandardMaterial({ color: type === 'truck' ? pick([0xc8cacc, 0x2a4a7a, 0x8a8d92]) : pick(carColors), roughness: 0.32, metalness: 0.65 });
+  let hl, hx, wheels, hy, ty;
+  if (type === 'truck') {
+    hl = 4.0; hx = 1.2; hy = 0.95; ty = 1.1;
+    box(tireMat, 2.2, 0.35, 7.6, 0, 0.72, 0.1, g);
+    box(bm, 2.3, 2.2, 1.9, 0, 1.95, -3.0, g);
+    box(glassMat, 2.1, 0.8, 0.05, 0, 2.4, -3.96, g);
+    box(new THREE.MeshStandardMaterial({ color: 0xb9bbbd, roughness: 0.7, metalness: 0.3 }), 2.4, 2.6, 5.8, 0, 2.2, 1.05, g);
+    wheels = [[-3.0, 0.46], [1.7, 0.46], [2.9, 0.46]];
+  } else {
+    hl = 2.2; hx = 0.9; hy = 0.66; ty = 0.8;
+    g.add(new THREE.Mesh(sedanGeo, bm));
+    const gl = new THREE.Mesh(sedanGlassGeo, glassMat); g.add(gl); g.userData.glass = gl;
+    wheels = [[-1.38, 0.32], [1.38, 0.32]];
+  }
+  for (const [wz, r] of wheels) for (const sx of [-1, 1]) {
+    const w = new THREE.Mesh(wheelGeo, tireMat); w.scale.set(0.24, r, r); w.position.set(sx * (hx - 0.1), r, wz); g.add(w);
+  }
+  for (const sx of [-1, 1]) {
+    box(lit ? headMatOn : headMatOff, 0.36, 0.13, 0.06, sx * (hx - 0.3), hy, -hl, g);
+    box(lit ? tailMatOn : tailMatOff, 0.4, 0.13, 0.06, sx * (hx - 0.3), ty, hl, g);
+    if (lit) {
+      const h = glow(0xfff2cc, 2.0); h.position.set(sx * (hx - 0.3), hy, -hl - 0.08); g.add(h);
+      const t = glow(0xff2200, 0.8, 0.9); t.position.set(sx * (hx - 0.3), ty, hl + 0.06); g.add(t);
+    }
+  }
+  box(plateMat, 0.4, 0.16, 0.03, 0, 0.5, -hl - 0.01, g); box(plateMat, 0.4, 0.16, 0.03, 0, 0.55, hl + 0.01, g);
+  if (lit) {
+    const pool = new THREE.Mesh(unitPlane, poolMat);
+    pool.rotation.x = -Math.PI / 2; pool.scale.set(5, 12, 1); pool.position.set(0, 0.03, -hl - 6); g.add(pool);
+  }
+  g.userData.bm = bm;
+  return { g, hl, hx };
+}
+
+const cars = [];
+// yaw: 0=-z方向, π=+z方向, π/2=-x方向, -π/2=+x方向
+function addCar(x, z, yaw, v, kind, opt = {}) {
+  const type = opt.type || 'sedan', lit = !opt.dark;
+  const { g, hl, hx } = makeCarMesh(type, lit);
+  g.position.set(x, 0, z); g.rotation.order = 'YXZ'; g.rotation.y = yaw; scene.add(g);
+  const car = { g, kind, type, lit, x, z, yaw, v, vc: v, hl, hx, baseX: x, t0: T, gone: false, minGap: 99, counted: false, horned: false, snd: null,
+    obey: kind === 'behind' || kind === 'oncoming' };
+  if (lit) attachEngine(car);
+  cars.push(car);
+  return car;
+}
+function removeCar(c) { c.gone = true; scene.remove(c.g); killEngine(c); }
+function clearCars() { cars.forEach(removeCar); cars.length = 0; }
+// 点(px,pz)と車体の隙間(車のローカル座標)
+function carGap(c, px, pz) {
+  const dx = px - c.x, dz = pz - c.z, cs = Math.cos(c.yaw), sn = Math.sin(c.yaw);
+  return [Math.abs(dx * cs - dz * sn) - c.hx, Math.abs(-dx * sn - dz * cs) - c.hl];
+}
+
+/* =====================================================================
+   自転車と乗員のモデル
+   ===================================================================== */
+const wheelTorus = new THREE.TorusGeometry(0.33, 0.022, 6, 20); wheelTorus.rotateY(Math.PI / 2);
+const headGeo = new THREE.SphereGeometry(0.11, 12, 10);
+function makeRider({ dark = true, light = false, phone = false } = {}) {
+  const g = new THREE.Group();
+  const bike = new THREE.Group(), body = new THREE.Group();       // 転倒時は車体と乗員が別々に動く
+  g.add(bike, body); g.userData.bikeG = bike; g.userData.bodyG = body;
+  const fm = new THREE.MeshStandardMaterial({ color: dark ? 0x121214 : 0x8a8f99, roughness: 0.45, metalness: 0.7 });
+  const cloth = new THREE.MeshStandardMaterial({ color: dark ? 0x0b0b0d : pick([0x2d4a7a, 0x7a2d2d, 0x3d6b45, 0x8a8a8a]), roughness: 0.95 });
+  const pants = new THREE.MeshStandardMaterial({ color: dark ? 0x0a0a0c : 0x1c2230, roughness: 0.95 });
+  const skin = new THREE.MeshStandardMaterial({ color: dark ? 0x3a2c26 : 0xb08a70, roughness: 0.8 });
+  for (const z of [-0.52, 0.52]) { const w = new THREE.Mesh(wheelTorus, tireMat); w.position.set(0, 0.33, z); bike.add(w); }
+  const RA = [0, 0.33, 0.52], FA = [0, 0.33, -0.52], BB = [0, 0.3, 0.1], ST = [0, 0.88, 0.25], HT = [0, 0.86, -0.36], BT = [0, 1.02, -0.4];
+  for (const [a, b] of [[BB, ST], [BB, HT], [ST, HT], [RA, BB], [RA, ST], [HT, FA], [HT, BT]]) tube(a, b, 0.018, fm, bike);
+  box(fm, 0.5, 0.025, 0.025, 0, 1.02, -0.4, bike); box(tireMat, 0.14, 0.05, 0.26, 0, 0.92, 0.27, bike);
+  tube([0, 0.95, 0.24], [0, 1.42, -0.04], 0.15, cloth, body);
+  const head = new THREE.Mesh(headGeo, skin); head.position.set(0, 1.6, -0.1); body.add(head);
+  if (dark) { const hood = new THREE.Mesh(headGeo, cloth); hood.scale.setScalar(1.12); hood.position.set(0, 1.61, -0.07); body.add(hood); }
+  const arms = [-1, 1].map(s => ({ s, m: tube([s * 0.17, 1.38, -0.04], [s * 0.22, 1.05, -0.4], 0.045, cloth, body) }));
+  g.userData.setSignal = sig => {                              // 手信号(左腕を水平=左折 / 右腕を水平=右折 / 左腕を下げる=停止)
+    for (const a of arms) {
+      let end = [a.s * 0.22, 1.05, -0.4];
+      if (sig === 'left' && a.s < 0) end = [-0.85, 1.38, -0.1];
+      else if (sig === 'right' && a.s > 0) end = [0.85, 1.38, -0.1];
+      else if (sig === 'stop' && a.s < 0) end = [-0.4, 0.85, -0.05];
+      setTube(a.m, [a.s * 0.17, 1.38, -0.04], end, 0.045);
+    }
+  };
+  const legs = [-1, 1].map(s => ({ s, thigh: tube([0, 0, 0], [0, 1, 0], 0.07, pants, body), shin: tube([0, 0, 0], [0, 1, 0], 0.055, pants, body) }));
+  if (light) {
+    const f = glow(0xfff0c8, 0.7); f.position.set(0, 0.95, -0.5); bike.add(f);
+    const r = glow(0xff2200, 0.35, 0.9); r.position.set(0, 0.7, 0.6); bike.add(r);
+  }
+  if (phone) { const s = glow(0x9fc4ff, 0.45, 0.9); s.position.set(0.12, 1.45, -0.32); body.add(s); head.material = new THREE.MeshBasicMaterial({ color: 0x5a6c8a }); }
+  g.userData.anim = ph => {
+    for (const l of legs) {
+      const a = ph + (l.s > 0 ? Math.PI : 0), foot = [l.s * 0.1, 0.3 + 0.16 * Math.sin(a), 0.1 + 0.16 * Math.cos(a)], hip = [l.s * 0.09, 0.93, 0.2];
+      const knee = [l.s * 0.11, (hip[1] + foot[1]) / 2 + 0.06, (hip[2] + foot[2]) / 2 - 0.2];
+      setTube(l.thigh, hip, knee, 0.07); setTube(l.shin, knee, foot, 0.055);
+    }
+  };
+  // 降りて自転車を押して歩く姿: 自転車の後ろに立ち、両手でハンドルを持つ
+  const WB = 0.7;
+  g.userData.setWalk = on => {
+    body.position.z = on ? WB : 0;
+    for (const a of arms) setTube(a.m, [a.s * 0.17, 1.38, -0.04], [a.s * 0.22, 1.05, on ? -0.4 - WB : -0.4], 0.045);
+  };
+  g.userData.walk = ph => {
+    for (const l of legs) {
+      const a = ph + (l.s > 0 ? Math.PI : 0), hip = [l.s * 0.09, 0.93, 0.05], foot = [l.s * 0.1, Math.max(0.03, 0.12 * Math.sin(a)), 0.05 + 0.3 * Math.sin(a + 1.2)];
+      const knee = [l.s * 0.11, 0.5, (hip[2] + foot[2]) / 2 - 0.08];
+      setTube(l.thigh, hip, knee, 0.07); setTube(l.shin, knee, foot, 0.055);
+    }
+  };
+  g.userData.anim(0);
+  return g;
+}
+
+/* 転倒モーション
+   ① 前輪が滑って車体が左右に振れる → ② 車体が横倒しになり、向きを変えながら路面を滑る
+   ③ 乗員は慣性で車体から離れ、宙を舞って路面に叩きつけられ、横たわる(落下の衝撃音つき)
+   r: { g(makeRiderのグループ), fallDir(倒れる向き: +1=右/-1=左), ft, bs } */
+function animRiderFall(r, dt) {
+  const bike = r.g.userData.bikeG, body = r.g.userData.bodyG, d = r.fallDir, flip = r.style === 'flip', hit = r.style === 'hit';
+  r.ft = (r.ft || 0) + dt; const ft = r.ft;
+  if (!r.bs) r.bs = flip ? { x: 0, y: 0, z: 0, vx: 0, vy: 2.8, vz: -3.2, landed: false }
+    : hit ? { x: 0, y: 0, z: 0, vx: d * 1.5, vy: 4.6, vz: -4.5, landed: false }                  // 車にはね飛ばされ、高く投げ出される
+    : { x: 0, y: 0, z: 0, vx: d * 2.4, vy: 2.6, vz: -2.2, landed: false };
+  const kb = Math.min(1, ft / 0.42), eb = kb * kb * (3 - 2 * kb);                      // 車体の進行度(なめらかに)
+  if (flip) {                                                                           // 穴に前輪が落ち、車体は前のめりに突っ込む
+    bike.rotation.set(-1.3 * eb, 0, 0); bike.position.set(0, -0.8 * eb, -0.9 * eb);
+  } else if (hit) {                                                                     // 自転車も宙に舞い、回転しながら路面に落ちる
+    bike.rotation.set(-2.4 * eb, d * 0.8 * eb, -d * 1.3 * eb); bike.position.set(d * 0.5 * eb, 0.9 * Math.sin(Math.min(1, kb * 1.3) * Math.PI), -1.6 * eb);
+  } else {
+    bike.rotation.set(0, Math.sin(ft * 22) * 0.35 * (1 - kb) + d * 0.5 * eb, -d * 1.5 * eb);   // スリップで振れ、横倒しに
+    bike.position.set(d * 0.7 * eb, 0.12 * Math.sin(kb * Math.PI), -0.8 * eb);                // 勢いで滑る
+  }
+  const s = r.bs, t = ft - 0.12, floor = flip ? -0.9 : 0;                               // 乗員は少し遅れて離れる
+  if (t <= 0) return;
+  if (!s.landed) {
+    s.vy -= 9.8 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt;
+    if (s.y <= floor) { s.y = floor; s.landed = true; r.landT = ft; s.vx *= 0.6; s.vz *= 0.6; smashSound(); }
+  } else {
+    const f = Math.max(0, 1 - 4 * dt); s.vx *= f; s.vz *= f; s.x += s.vx * dt; s.z += s.vz * dt;
+  }
+  body.position.set(s.x, s.y, s.z);
+  if (flip) {                                                                           // 前方宙返り(前転)して穴の底へ落ち、仰向けに倒れる
+    const kf = Math.min(1, t / 0.6), lie = s.landed ? Math.min(1, (ft - r.landT) / 0.4) : 0;
+    body.rotation.set(-2 * Math.PI * kf * kf * (3 - 2 * kf) - 1.5 * lie, 0, 0);
+    return;
+  }
+  const kr = Math.min(1, t / 0.5), er = kr * kr * (3 - 2 * kr);
+  body.rotation.set(s.landed ? 0.25 : -1.0 * Math.sin(t * 5), -d * 0.6 * Math.sin(kr * Math.PI), -d * 1.55 * er);   // 空中で回転し、横向きに倒れる
+}
+function resetRiderPose(g) {
+  g.userData.bikeG.position.set(0, 0, 0); g.userData.bikeG.rotation.set(0, 0, 0);
+  g.userData.bodyG.position.set(0, 0, 0); g.userData.bodyG.rotation.set(0, 0, 0);
+}
+
+// ママチャリ: 低いまたぎフレーム・前かご・アップハンドル・立った姿勢。傘さしや弱いダイナモライトの個体もいる
+function makeMama({ lit = false, umbrella = false } = {}) {
+  const g = new THREE.Group();
+  const fm = new THREE.MeshStandardMaterial({ color: pick([0xa8aeb8, 0x2b3a5a, 0x6b2b2b, 0x2f5a3a]), roughness: 0.4, metalness: 0.6 });
+  const cloth = new THREE.MeshStandardMaterial({ color: pick([0x20232b, 0x3a2f3f, 0x2a3a3a]), roughness: 0.95 });
+  const pants = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.95 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xb08a70, roughness: 0.8 });
+  for (const z of [-0.56, 0.56]) { const w = new THREE.Mesh(wheelTorus, tireMat); w.position.set(0, 0.33, z); g.add(w); }
+  const RA = [0, 0.33, 0.56], FA = [0, 0.33, -0.56], BB = [0, 0.3, 0.1], ST = [0, 0.93, 0.3], HT = [0, 0.97, -0.44], LOW = [0, 0.34, 0.0];
+  for (const [a, b] of [[HT, LOW], [LOW, BB], [BB, ST], [RA, BB], [RA, ST], [HT, FA]]) tube(a, b, 0.02, fm, g);
+  for (const s of [-1, 1]) tube([0, 1.02, -0.45], [s * 0.3, 1.1, -0.3], 0.016, fm, g);   // 手前に引いたアップハンドル
+  box(tireMat, 0.16, 0.06, 0.26, 0, 0.96, 0.3, g);                                       // サドル
+  box(fm, 0.3, 0.04, 0.3, 0, 0.84, 0.6, g);                                              // 荷台
+  box(new THREE.MeshStandardMaterial({ color: 0x3a3d44, roughness: 0.5, metalness: 0.5 }), 0.4, 0.2, 0.3, 0, 1.05, -0.72, g);   // 前かご
+  box(new THREE.MeshStandardMaterial({ color: pick([0xc9c4b0, 0x7a9ac0, 0xd0a0a0]), roughness: 0.9 }), 0.3, 0.2, 0.22, 0, 1.2, -0.72, g);   // 買い物袋
+  {                                                                                      // 買い物袋から飛び出したネギ(白い根元と緑の葉)
+    const nw = new THREE.MeshStandardMaterial({ color: 0xe6ead6, roughness: 0.8 }), ng = new THREE.MeshStandardMaterial({ color: 0x3f8f3c, roughness: 0.85 });
+    for (const [dx, tx] of [[-0.06, -0.14], [0.05, 0.1]]) {
+      tube([dx, 1.22, -0.72], [dx + tx * 0.35, 1.52, -0.7], 0.022, nw, g);
+      tube([dx + tx * 0.35, 1.52, -0.7], [dx + tx, 1.85, -0.66], 0.03, ng, g);
+    }
+  }
+  tube([0, 0.98, 0.3], [0, 1.52, 0.2], 0.16, cloth, g);
+  const head = new THREE.Mesh(headGeo, skin); head.position.set(0, 1.7, 0.16); g.add(head);
+  for (const s of [-1, 1]) tube([s * 0.17, 1.46, 0.2], [s * 0.3, 1.1, -0.3], 0.045, cloth, g);
+  const legs = [-1, 1].map(s => ({ s, thigh: tube([0, 0, 0], [0, 1, 0], 0.07, pants, g), shin: tube([0, 0, 0], [0, 1, 0], 0.055, pants, g) }));
+  if (umbrella) {
+    tube([0.3, 1.1, -0.3], [0.3, 2.0, -0.2], 0.012, fm, g);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.65, 0.3, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0x1a2440, roughness: 0.9, side: THREE.DoubleSide }));
+    c.position.set(0.3, 2.1, -0.2); g.add(c);
+  }
+  if (lit) { const f = glow(0xffe6a8, 0.9, 0.55); f.position.set(0, 1.0, -0.5); g.add(f); }   // ダイナモライトの弱い明かり
+  g.userData.anim = ph => {
+    for (const l of legs) {
+      const a = ph + (l.s > 0 ? Math.PI : 0), foot = [l.s * 0.1, 0.3 + 0.16 * Math.sin(a), 0.1 + 0.16 * Math.cos(a)], hip = [l.s * 0.09, 0.97, 0.3];
+      const knee = [l.s * 0.11, (hip[1] + foot[1]) / 2 + 0.06, (hip[2] + foot[2]) / 2 - 0.2];
+      setTube(l.thigh, hip, knee, 0.07); setTube(l.shin, knee, foot, 0.055);
+    }
+  };
+  g.userData.anim(0);
+  return g;
+}
+
+/* =====================================================================
+   プレイヤー
+   ===================================================================== */
+const P = { mode: 'bike', state: 'title', x: -2.8, z: 0, speed: 0, psi: 0, dist: 0, near: 0, deadT: 0, fallT: 0, fallDir: 1, braking: false, stopT: 0, stopUsed: false, lineI: 0, lineS: 99, time: 0, maxV: 0, stops: 0, readyT: 0, goT: 0, goalT: 0 };
+let rigYBike = 0, rigYCar = -0.3;
+
+// 自転車モード: 足元に見えるハンドルと前輪
+const bars = new THREE.Group(); rig.add(bars);
+{
+  const m = new THREE.MeshStandardMaterial({ color: 0x7a7f8a, roughness: 0.35, metalness: 0.8 });
+  const bar = new THREE.Mesh(unitCyl, m); bar.scale.set(0.012, 0.56, 0.012); bar.rotation.z = Math.PI / 2; bars.add(bar);
+  for (const s of [-1, 1]) { const gr = new THREE.Mesh(unitCyl, tireMat); gr.scale.set(0.018, 0.12, 0.018); gr.rotation.z = Math.PI / 2; gr.position.x = s * 0.25; bars.add(gr); }
+  tube([0, 0, 0], [0, -0.12, 0.06], 0.014, m, bars); tube([0, -0.12, 0.06], [0, -0.66, -0.12], 0.016, m, bars);
+  const fw = new THREE.Mesh(wheelTorus, tireMat); fw.position.set(0, -0.67, -0.12); bars.add(fw);
+  const skinM = new THREE.MeshStandardMaterial({ color: 0xa88468, roughness: 0.8 });        // 降りて押している時だけ見える、ハンドルを握る両手
+  for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), skinM); h.scale.set(1.1, 0.9, 1.5); h.position.set(s * 0.25, 0.015, 0.02); h.visible = false; bars.add(h); bars.userData.hands = (bars.userData.hands || []).concat(h); }
+}
+// 手信号の腕(一人称視点で視界の左右に見える)
+const sigG = new THREE.Group(); rig.add(sigG); sigG.visible = false;
+const sigArmMat = new THREE.MeshStandardMaterial({ color: 0x1a1c22, roughness: 0.95 });
+const sigA = [0, 1].map(() => { const m = new THREE.Mesh(unitCyl, sigArmMat); sigG.add(m); return m; }), sigB = new THREE.Mesh(unitCyl, sigArmMat);
+sigG.add(sigB);
+let lastSigView = '';
+function setSignalView(sig) {
+  lastSigView = sig;
+  sigA[0].visible = sig === 'left' || sig === 'stop'; sigA[1].visible = sig === 'right'; sigB.visible = sig === 'stop';
+  if (sig === 'left') setTube(sigA[0], [-0.22, 0.03, 0], [-0.95, 0.1, -0.12], 0.05);
+  if (sig === 'right') setTube(sigA[1], [0.22, 0.03, 0], [0.95, 0.1, -0.12], 0.05);
+  if (sig === 'stop') { setTube(sigA[0], [-0.22, 0.03, 0], [-0.5, 0.05, -0.06], 0.05); setTube(sigB, [-0.5, 0.05, -0.06], [-0.55, -0.4, -0.1], 0.045); }
+}
+const panelC = document.createElement('canvas'); panelC.width = 256; panelC.height = 96;
+const panelT = new THREE.CanvasTexture(panelC); panelT.colorSpace = THREE.SRGBColorSpace;
+const panelMat = new THREE.MeshBasicMaterial({ map: panelT, fog: false, color: 0x99aabb });
+const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.09), panelMat);
+panel.position.set(0, 0.07, 0.05); panel.rotation.x = -1.0; bars.add(panel);
+let panelKey = '';
+function drawPanel() {
+  const drive = P.mode === 'drive';
+  const key = drive ? Math.round(P.speed * 3.6) + '|' + Math.floor(P.dist / 10) + '|' + P.near : Math.floor(P.dist) + '|' + P.near;
+  if (key === panelKey) return; panelKey = key;
+  const c = panelC.getContext('2d'); c.fillStyle = '#05080c'; c.fillRect(0, 0, 256, 96);
+  c.fillStyle = '#9fd'; c.font = 'bold 34px sans-serif'; c.fillText(drive ? Math.round(P.speed * 3.6) + ' km/h' : Math.floor(P.dist) + ' m', 12, 40);
+  c.fillStyle = '#fc6'; c.font = '24px sans-serif'; c.fillText(drive ? `${Math.floor(P.dist)} m  通過 ${P.near}` : 'ヒヤリ ' + P.near, 12, 80);
+  panelT.needsUpdate = true;
+}
+
+// ドライバーモード: 自車と車内
+const myCar = new THREE.Group(); myCar.visible = false; scene.add(myCar);
+{
+  const { g } = makeCarMesh('sedan', true); g.userData.glass.visible = false; g.userData.bm.color.setHex(0x23262c); myCar.add(g);
+  const im = new THREE.MeshStandardMaterial({ color: 0x0e0f11, roughness: 0.9 });
+  box(im, 1.6, 0.2, 0.5, 0, 0.88, -0.88, myCar);                      // ダッシュボード
+  box(im, 1.66, 0.04, 1.7, 0, 1.47, 0.2, myCar);                      // 屋根
+  for (const s of [-1, 1]) { tube([s * 0.82, 0.95, -1.0], [s * 0.74, 1.47, -0.6], 0.035, im, myCar); box(im, 0.06, 0.5, 2.0, s * 0.86, 0.75, 0.1, myCar); }
+  const sw = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.016, 8, 24), new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.6 }));
+  sw.position.set(0.38, 0.9, -0.52); sw.rotation.x = -0.4; myCar.add(sw);
+  myCar.userData.wheel = sw;
+  const dp = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.06), panelMat); dp.position.set(0.02, 1.0, -0.7); dp.rotation.set(-0.3, -0.35, 0, 'YXZ'); myCar.add(dp);
+}
+
+
+const flash = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0, depthTest: false, fog: false }));
+flash.position.set(0, 0, -0.4); flash.renderOrder = 998; camera.add(flash);
+function setOverlay() {}
+
+/* =====================================================================
+   UI(DOM): HUD / メニュー / ランキング / 成績
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const GOAL = 1000;                       // ゴールまでの距離(m)
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtT = t => { t = Math.max(0, Number(t) || 0); const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s < 10 ? '0' : ''}${s.toFixed(2)}`; };
+const LS = {
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const nameEl = $('uname'), countEl = $('count'), hudT = $('hT'), hudB = $('hB'), hudD = $('hD'), hudS = $('hS'), hudN = $('hN');
+nameEl.value = LS.get('nlr_name', '');
+let course = LS.get('nlr_course', 'goal') === 'free' ? 'free' : 'goal';       // 選択中のコース(ゴール方式 / フリーラン)
+let diffKey = ['easy', 'normal', 'hard'].includes(LS.get('nlr_diff', 'normal')) ? LS.get('nlr_diff', 'normal') : 'normal';
+const EK = () => ({ easy: 1.9, normal: 1.3, hard: 0.9 })[diffKey];          // イベントの間隔の倍率(大きいほど間があく)
+const myName = () => nameEl.value.trim().replace(/[\u0000-\u001f<>]/g, '').slice(0, 12) || 'ななし';
+nameEl.addEventListener('change', () => LS.set('nlr_name', nameEl.value.trim().slice(0, 12)));
+
+// ランキング: サーバー(server.py)があれば共有、無ければこの端末のlocalStorage
+const rkCmp = (a, b) => a.time - b.time || a.near - b.near;                       // ゴール方式: 速い順
+const rkCmpFree = (a, b) => (b.dist - a.dist) || (a.time - b.time);               // フリーラン: 遠い順
+const cmpFor = cat => cat.endsWith('_free') ? rkCmpFree : rkCmp;
+async function getRanking(mode) {
+  try {
+    const r = await fetch('api/ranking?mode=' + mode, { cache: 'no-store' });
+    if (!r.ok) throw new Error('no server');
+    const j = await r.json();
+    if (!Array.isArray(j.list)) throw new Error('bad');
+    return { list: j.list, shared: true };
+  } catch (e) {
+    return { list: (LS.get('nlr_rank', {})[mode] || []).slice().sort(cmpFor(mode)), shared: false };
+  }
+}
+async function submitRun(e) {
+  if (P.demo) return;                              // デモ中の記録はランキングに載せない
+  const all = LS.get('nlr_rank', {}), arr = all[e.mode] || (all[e.mode] = []);    // ローカルには自己ベストだけ残す
+  const mi = arr.findIndex(x => x.name === e.name), cmp = cmpFor(e.mode);
+  if (mi < 0) arr.push(e); else if (cmp(e, arr[mi]) < 0) arr[mi] = e;
+  arr.sort(cmp); arr.length = Math.min(arr.length, 100); LS.set('nlr_rank', all);
+  try {
+    const r = await fetch('api/ranking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(e) });
+    if (!r.ok) throw new Error('rejected');
+    const j = await r.json();
+    return { shared: true, rank: j.rank, total: j.total, best: j.best };
+  } catch (err) {
+    const i = arr.findIndex(x => x.name === e.name);
+    return { shared: false, rank: i + 1, total: arr.length, best: arr[i] === e };
+  }
+}
+function rankHTML(list, shared, me, n = 10, free = false) {
+  if (!list.length) return `<div class="note">まだ記録がありません。${free ? '最初の記録を残そう' : '最初のゴールを決めよう'}</div>`;
+  const rows = list.slice(0, n).map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td class="n">${i + 1}</td><td>${esc(e.name)}</td>`
+    + (free ? `<td class="n">${Math.floor(Number(e.dist) || 0)} m</td><td class="n">${fmtT(e.time)}</td>` : `<td class="n">${fmtT(e.time)}</td>`)
+    + `<td class="n">${Number(e.near) | 0}</td></tr>`).join('');
+  const head = free ? '<th>#</th><th>名前</th><th>距離</th><th>生存時間</th><th>ヒヤリ</th>' : '<th>#</th><th>名前</th><th>タイム</th><th>ヒヤリ</th>';
+  return `<table class="rk"><tr>${head}</tr>${rows}</table><div class="note">${shared ? '共有ランキング(サーバー)' : 'ローカルランキング(この端末のみ)'} ・ 1人1記録(自己ベスト)</div>`;
+}
+
+// 成績(この端末に保存)
+const emptyStats = () => ({ runs: {}, goals: {}, deaths: 0, dist: 0, near: 0, time: 0, causes: {}, best: {}, bestDist: {} });
+const loadStats = () => Object.assign(emptyStats(), LS.get('nlr_stats', {}));
+function recordRun(r) {
+  const s = loadStats();
+  s.runs[r.mode] = (s.runs[r.mode] || 0) + 1; s.dist += r.dist; s.near += r.near; s.time += r.time;
+  if (r.course === 'free') s.bestDist[r.mode] = Math.max(s.bestDist[r.mode] || 0, r.dist);
+  if (r.goal) { s.goals[r.mode] = (s.goals[r.mode] || 0) + 1; if (!(s.best[r.mode] <= r.time)) s.best[r.mode] = r.time; }
+  else { s.deaths++; s.causes[r.title] = (s.causes[r.title] || 0) + 1; }
+  LS.set('nlr_stats', s);
+}
+function statsHTML() {
+  const s = loadStats(), sum = o => Object.values(o).reduce((a, b) => a + b, 0), row = (k, v) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`;
+  const causes = Object.entries(s.causes).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => row(esc(k), v + ' 回')).join('');
+  return `<table class="rk">${row('総プレイ回数', sum(s.runs) + ' 回')}${row('ゴール回数', sum(s.goals) + ' 回')}${row('死亡回数', s.deaths + ' 回')}${row('累計走行距離', (s.dist / 1000).toFixed(2) + ' km')}${row('累計ヒヤリ', s.near + ' 回')}${row('累計プレイ時間', fmtT(s.time))}${row('自己ベスト(自転車)', s.best.bike ? fmtT(s.best.bike) : '—')}${row('自己ベスト(車)', s.best.drive ? fmtT(s.best.drive) : '—')}${row('フリーラン最長(自転車)', s.bestDist.bike ? Math.floor(s.bestDist.bike) + ' m' : '—')}${row('フリーラン最長(車)', s.bestDist.drive ? Math.floor(s.bestDist.drive) + ' m' : '—')}</table>`
+    + (causes ? `<div class="note" style="margin-top:10px">よくある死因</div><table class="rk">${causes}</table>` : '');
+}
+let tab = 'bike';
+async function renderTab(which) {
+  if (which) tab = which;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const body = $('tabBody'), my = tab, free = course === 'free', key = my + course;
+  if (my === 'stats') { body.innerHTML = statsHTML(); return; }
+  body.innerHTML = '<div class="note">読み込み中…</div>';
+  const { list, shared } = await getRanking(my + (free ? '_free' : ''));
+  if (tab + course === key) body.innerHTML = rankHTML(list, shared, myName(), 10, free);
+}
+
+// 警戒ヒント: 危険の予兆(音)が鳴った時に、文字でも知らせる(メニューでオフにできる)
+const warnEl = $('warn'), hintBox = $('optHints');
+let hintsOn = LS.get('nlr_hints', true) !== false, warnUntil = 0;
+hintBox.checked = hintsOn;
+hintBox.addEventListener('change', () => { hintsOn = hintBox.checked; LS.set('nlr_hints', hintsOn); });
+function warnHint(text) {
+  if (!hintsOn || P.state !== 'play') return;
+  warnEl.textContent = '⚠ ' + text; warnEl.style.display = 'block'; warnEl.style.borderColor = ''; warnEl.style.background = ''; warnUntil = T + 2.6;
+}
+function flashMsg(text, icon = '🔔') {          // ベル/クラクションなどの結果(ヒント設定に関係なく表示)
+  warnEl.textContent = icon + ' ' + text; warnEl.style.display = 'block'; warnEl.style.borderColor = '#3a8fa8'; warnEl.style.background = 'rgba(10,40,60,.88)'; warnUntil = T + 2.2;
+}
+
+// リプレイ中だけ明るくできる(暗くて何が起きたか分からない時用)
+let replayBright = Number(LS.get('nlr_bright', 0)) || 0;
+function applyBright(b) {
+  renderer.toneMappingExposure = 1.1 + b * 2.4; hemi.intensity = 0.55 + b * 2.2; moon.intensity = 0.14 + b * 1.2;
+  scene.fog.density = fogBase * (1 - 0.85 * b);
+}
+function toggleBright() {
+  replayBright = replayBright > 0.5 ? 0 : 1; LS.set('nlr_bright', replayBright);
+  const br = $('rBr'); if (br) br.value = Math.round(replayBright * 100);
+  if (P.state === 'replay') applyBright(replayBright);
+}
+
+// 結果カード(死亡/ゴール)
+let runDone = false, runId = 0;
+function resultHTML(r) {
+  const row = (k, v) => `<tr><td>${k}</td><td class="n">${v}</td></tr>`;
+  const head = (r.goal ? '<p class="big ok">GOAL!</p>' : `<p class="big bad">${r.mode === 'drive' ? '事故発生' : '死亡'}</p>`) + `<div class="note" style="margin:0 0 4px">${r.mode === 'drive' ? '車' : '自転車'} ・ ${r.course === 'free' ? 'フリーラン' : 'ゴール方式'}</div>`;
+  const body = r.goal ? '<div class="why">ゴールまで走り切った</div>' : `<div class="why">${esc(r.title)}</div>${r.why ? `<div class="cause">${esc(r.why)}</div>` : ''}`;
+  return head + body + `<table class="rk">${row('タイム', fmtT(r.time))}${row('到達距離', r.course === 'free' ? Math.floor(r.dist) + ' m' : `${Math.floor(r.dist)} / ${GOAL} m`)}${row('ヒヤリ', r.near + ' 回')}${row('最高速度', Math.round(r.maxV * 3.6) + ' km/h')}${row('平均速度', Math.round(r.avgV * 3.6) + ' km/h')}${r.mode === 'bike' ? row('停止線で停止', r.stops + ' 回') : ''}</table>`
+    + '<div id="rk"></div>' + (r.goal ? '' : `<label class="br">リプレイの明るさ<input type="range" id="rBr" min="0" max="100" value="${Math.round(replayBright * 100)}"></label>`)
+    + '<div class="btns"><button id="rBike" class="go">自転車で再挑戦</button><button id="rDrive" class="go">車で再挑戦</button></div><div class="btns"><button id="rMenu">タイトル・ランキング</button></div>'
+    + (r.goal ? '' : '<div class="note">リプレイ中: A/D=視点回転 ドラッグ=見回し L=明るさ切替</div>');
+}
+function finishRun(goal, title, why) {
+  if (runDone) return; runDone = true;
+  countEl.style.display = 'none'; P.goT = 0;
+  const free = P.course === 'free';
+  const res = { mode: P.mode, course: free ? 'free' : 'goal', goal, title, why, time: P.time, dist: free ? P.dist : Math.min(P.dist, GOAL), near: P.near, maxV: P.maxV, avgV: P.dist / Math.max(P.time, 0.01), stops: P.stops };
+  recordRun(res);
+  const card = $('result'); card.innerHTML = resultHTML(res); card.style.display = 'block';
+  $('rBike').onclick = () => startGame('bike', P.course); $('rDrive').onclick = () => startGame('drive', P.course); $('rMenu').onclick = toTitle;
+  const br = $('rBr');
+  if (br) br.oninput = () => { replayBright = br.value / 100; LS.set('nlr_bright', replayBright); if (P.state === 'replay') applyBright(replayBright); };
+  if (free ? (res.dist < 10 || res.time < 2) : !goal) return;               // ゴール方式はゴール時のみ、フリーランは死亡時に記録
+  const id = runId, name = myName(), cat = res.mode + (free ? '_free' : '');
+  const entry = free ? { name, mode: cat, dist: Math.floor(res.dist), time: +res.time.toFixed(2), near: res.near, ts: Date.now() }
+                     : { name, mode: cat, time: +res.time.toFixed(2), near: res.near, ts: Date.now() };
+  submitRun(entry).then(async info => {
+    if (id !== runId) return;
+    const { list, shared } = await getRanking(cat);
+    const el = $('rk'); if (id !== runId || !el) return;
+    el.innerHTML = `<div class="rkline"><b>${info.rank}位</b> / ${info.total}人中${info.best ? ' <b class="ok">自己ベスト更新!</b>' : ''}</div>` + rankHTML(list, shared, name, 5, free);
+  });
+}
+function reachGoal() { if (P.state !== 'play') return; P.state = 'goal'; P.goalT = 0; finishRun(true, 'GOAL', ''); }
+function syncCourse() { document.querySelectorAll('#course button').forEach(b => b.classList.toggle('on', b.dataset.c === course)); }
+function syncDiff() { document.querySelectorAll('#diff button').forEach(b => b.classList.toggle('on', b.dataset.d === diffKey)); }
+document.querySelectorAll('#diff button').forEach(b => { b.onclick = () => { diffKey = b.dataset.d; LS.set('nlr_diff', diffKey); syncDiff(); }; });
+syncDiff();
+document.querySelectorAll('#course button').forEach(b => { b.onclick = () => { course = b.dataset.c; LS.set('nlr_course', course); syncCourse(); renderTab(); }; });
+syncCourse();
+/* ---------- 天候・路面状況 ---------- */
+const WEATHERS = {
+  clear: { name: '晴れ', surf: '乾燥', grip: 1, fog: 1 },
+  rain: { name: '小雨', surf: '濡れている', grip: 0.7, fog: 1.25, n: 450, v: 14 },
+  storm: { name: '大雨・強風', surf: '水たまりで滑りやすい', grip: 0.5, fog: 1.7, n: 900, v: 19, storm: true },
+  fog: { name: '濃霧', surf: '乾燥', grip: 1, fog: 2.4 },
+  snow: { name: '雪', surf: '凍結・積雪(とても滑る)', grip: 0.35, fog: 1.4, n: 500, v: 1.6, snow: true },
+  blizzard: { name: '吹雪', surf: '凍結・積雪(極めて滑る)', grip: 0.28, fog: 2.4, n: 900, v: 4.5, snow: true, blizzard: true },   // 視界ゼロ近く。自転車(人)はぼんやり見えるが、車は直前まで見えない
+};
+let W = WEATHERS.clear, fogBase = 0.021, debrisT = 20, paused = false;
+const PN = 900, precipPos = new Float32Array(PN * 6), precipDrops = Array.from({ length: PN }, () => ({ x: rnd(-7, 7), y: rnd(0, 7), z: rnd(-14, 3) }));
+const rainL = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(precipPos, 3)), new THREE.LineBasicMaterial({ color: 0x9fb4d0, transparent: true, opacity: 0.35, depthWrite: false }));
+const snowP = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(PN * 3), 3)), new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, transparent: true, opacity: 0.85, depthWrite: false }));
+rainL.frustumCulled = snowP.frustumCulled = false; rainL.visible = snowP.visible = false; rig.add(rainL, snowP);
+function setWeather(key) {
+  W = WEATHERS[key] || WEATHERS.clear; fogBase = 0.021 * W.fog; scene.fog.density = fogBase;
+  const wet = key === 'rain' || key === 'storm';
+  const sn = !!W.snow;
+  roadMat.roughness = wet ? 0.2 : sn ? 0.85 : 0.55; roadMat.metalness = wet ? 0.3 : 0.05; roadMat.color.setHex(wet ? 0x6e6e78 : sn ? 0xb4b8c4 : 0x9a9aa0);
+  rainL.visible = !!W.n && !W.snow; snowP.visible = !!W.snow;
+  const n = W.n || 0; rainL.geometry.setDrawRange(0, n * 2); snowP.geometry.setDrawRange(0, n);
+}
+function updateWeather(dt) {
+  if (W.blizzard) for (const c of cars) c.g.visible = c === viewCar || P.mode === 'drive' && false || Math.hypot(c.x - P.x, c.z - P.z) < 12;       // 吹雪: 車は、すぐ近くに来るまで見えない(音と光のにじみだけが頼り)
+  if (!W.n) return;
+  const wind = W.storm ? 3 : 0.4;
+  for (let i = 0; i < W.n; i++) {
+    const d = precipDrops[i]; d.y -= W.v * dt; d.x += (W.snow ? (W.blizzard ? -9 : Math.sin(T + i) * 0.6) : -wind) * dt;
+    if (d.y < 0 || d.x < -7.5) { d.y = d.y < 0 ? 7 : d.y; d.x = d.x < -7.5 ? 7 : rnd(-7, 7); d.z = rnd(-14, 3); }
+    if (W.snow) { const p = snowP.geometry.attributes.position.array; p[i * 3] = d.x; p[i * 3 + 1] = d.y; p[i * 3 + 2] = d.z; }
+    else { precipPos[i * 6] = d.x; precipPos[i * 6 + 1] = d.y; precipPos[i * 6 + 2] = d.z; precipPos[i * 6 + 3] = d.x - wind * 0.03; precipPos[i * 6 + 4] = d.y + 0.5; precipPos[i * 6 + 5] = d.z; }
+  }
+  (W.snow ? snowP : rainL).geometry.attributes.position.needsUpdate = true;
+}
+function pickWeather() {
+  const r = Math.random(); return r < 0.38 ? 'clear' : r < 0.6 ? 'rain' : r < 0.72 ? 'storm' : r < 0.82 ? 'fog' : r < 0.91 ? 'snow' : 'blizzard';
+}
+/* ---------- 落下物(トラックの荷崩れ・強風で折れた枝など) ---------- */
+function spawnDebris() {
+  const z = P.z - rnd(50, 60), g = new THREE.Group(), r = Math.random(), o = new THREE.Group(); g.add(o);
+  let x = rnd(-3.0, -0.7);
+  const type = W.storm ? (r < 0.65 ? 'branch' : 'box') : (r < 0.35 ? 'tire' : r < 0.7 ? 'box' : 'branch');
+  const name = { tire: 'タイヤ', box: '荷物', branch: '折れた枝' }[type];
+  if (type === 'tire') { const w = new THREE.Mesh(wheelTorus, tireMat); w.rotation.x = Math.PI / 2; w.scale.setScalar(1.3); w.position.y = 0.1; o.add(w); }
+  else if (type === 'box') box(new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.9 }), 0.6, 0.4, 0.5, 0, 0.2, 0, o);
+  else tube([-0.8, 0.07, 0], [0.8, 0.1, 0.1], 0.05, new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 1 }), o);
+  let y = 7, vy = 0, landed = false;
+  const h = { g, z, x, update(dt) {
+    if (!landed) {
+      vy -= 9.8 * dt; y += vy * dt;
+      if (y <= 0) { y = 0; landed = true; sfx('crumble', x, 0.3, z, 1.2); if (P.z - z < 70) warnHint('前方の路上で何かが落ちる音…落下物に注意'); }
+    }
+    o.position.set(x, y, z);
+    if (!landed || P.state !== 'play') return;
+    if (P.mode === 'bike') {
+      if (!P.walk && Math.abs(P.x - x) < 0.55 && Math.abs(P.z - 0.5 - z) < 0.6) {
+        if (P.speed < SCRAPE_V) { P.speed *= 0.5; flashMsg(`${name}に乗り上げかけた`, '⚠️'); landed = true; z += 0; }
+        else goDown(P.x >= x ? 1 : -1, `路上の落下物(${name})に乗り上げて転倒し、後続車に轢かれた`);
+      }
+    } else if (Math.abs(P.x - x) < 1.0 && Math.abs(P.z - z) < 2.2 && P.speed > SCRAPE_V) endDrive(`路上の落下物(${name})に乗り上げた`, '落下物は手前で止まるか避ければ回避できた');
+  }, knock() { x += x < -1.7 ? 0.5 : -0.5; h.x = x; } };
+  addHazard(h);
+}
+/* ---------- 左折・右折する車 ---------- */
+function nearInterZ(z, r = 14) { const i = Math.round(-z / CL); for (let k = -1; k <= 1; k++) if (interType(i + k) && Math.abs(chunkZ(i + k) - z) < r) return true; return false; }
+function spawnTurnCar(kind) {
+  const it = findInter('plain', 55, 110) || findInter('signal', 55, 110); if (!it || usedInter.has(it.i)) return false;
+  usedInter.add(it.i);
+  let c;
+  if (kind === 'lturn') { c = addCar(-LANE, P.z + 35, 0, 13, 'behind'); c.lturn = true; c.title = '前を走っていた車が突然左折し、巻き込まれた'; }
+  else { c = addCar(LANE, it.cz - 45, Math.PI, 11, 'rturn'); c.title = '対向車の右折(右直事故)に巻き込まれた'; }
+  c.turn = { cz: it.cz, arc: false, done: false, wait: false };
+  c.obey = false; sfx('beep', c.x, 1, c.z, 0.4);
+  return true;
+}
+function turnStep(c, dt) {                // 戻り値: 目標速度。曲がる間は c.yaw を π/2(左へ向かう道)へ回す
+  const t = c.turn; if (!t || t.done) return c.vc;
+  if (!t.arc) {
+    const rem = (c.lturn ? c.z - t.cz : t.cz - c.z) - 5;
+    let v = c.vc;
+    if (rem < 26) v = Math.min(v, 6);
+    if (c.kind === 'rturn' && rem < 30 && !t.go) {                    // 自転車が来ていれば、対向の右折車は譲って待つ
+      const dist = P.z - t.cz;
+      if (dist > -4 && dist < 26 && P.mode === 'bike' && P.state === 'play') { t.wait = true; if (rem < 10) v = 0; }
+      else if (t.wait || rem < 8) { t.go = true; t.wait = false; }
+    }
+    if (rem <= 0 && !t.wait) { t.arc = true; if (P.mode === 'bike') warnHint(c.lturn ? '前の車が左折…自転車の進路を横切る' : '対向車が右折して車線を横切る'); }
+    if (!t.sig) { t.sig = true; if (rem < 60) warnHint(c.lturn ? '前の車が左へウインカー(カチカチ)' : '対向車が右折のウインカー(カチカチ)'); }
+    t.tick = (t.tick || 0) - dt; if (t.tick <= 0 && P.state === 'play') { t.tick = 0.6; sfx('click', c.x, 1, c.z, 0.5); }
+    return v;
+  }
+  const rate = Math.max(c.v, 2) / 5;
+  const d = Math.PI / 2 - c.yaw;
+  if (Math.abs(d) < rate * dt) { c.yaw = Math.PI / 2; t.arc = false; t.done = true; } else c.yaw += Math.sign(d) * rate * dt;
+  return Math.min(c.vc, 5);
+}
+/* ---------- あおり運転・パッシング・ルームミラー ---------- */
+function spawnTailgater() {
+  if (cars.some(c => c.aori && !c.aoriDone && !c.gone)) return false;
+  const c = spawnBehind(48); c.aori = true; c.vc = Math.max(c.vc, P.speed + 7); c.title = 'あおり運転の車に追い詰められ、はねられた'; return true;
+}
+const glareEl = document.createElement('div');
+glareEl.style.cssText = 'position:fixed;inset:0;pointer-events:none;opacity:0;z-index:4;background:radial-gradient(circle at 50% 38%,rgba(255,252,235,.98),rgba(255,246,215,.55) 45%,rgba(255,246,215,0) 78%)';
+document.body.appendChild(glareEl);
+let glareK = 0;
+function updateGlare(dt) {                // 後ろの車のパッシング(ハイビーム点滅)で、視界が眩しくなる
+  let k = 0;
+  if (P.state === 'play') for (const c of cars) if (c.aori && c.flashOn && !c.gone) k = Math.max(k, clamp(1.3 - Math.hypot(c.x - P.x, c.z - P.z) / 28, 0.25, 1));
+  glareK += (k - glareK) * Math.min(1, 18 * dt); glareEl.style.opacity = (glareK * 0.5).toFixed(2);
+}
+const mirrorRT = new THREE.WebGLRenderTarget(384, 110), mirrorCam = new THREE.PerspectiveCamera(48, 384 / 110, 0.2, 200);
+const mirrorMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.18), new THREE.MeshBasicMaterial({ map: mirrorRT.texture, depthTest: false, fog: false }));
+const mirrorFrame = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.22), new THREE.MeshBasicMaterial({ color: 0x15161a, depthTest: false, fog: false }));
+const mirrorGlare = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.18), new THREE.MeshBasicMaterial({ color: 0xfff8e0, transparent: true, opacity: 0, depthTest: false, fog: false }));
+mirrorMesh.scale.x = -1; mirrorMesh.position.set(0, 0.5, -1); mirrorFrame.position.set(0, 0.5, -1.001); mirrorGlare.position.set(0, 0.5, -0.999);
+mirrorFrame.renderOrder = 996; mirrorMesh.renderOrder = 997; mirrorGlare.renderOrder = 998;
+camera.add(mirrorFrame, mirrorMesh, mirrorGlare);
+const mirrorParts = [mirrorFrame, mirrorMesh, mirrorGlare]; let mirrorN = 0;
+function updateMirror() {
+  const on = (P.state === 'play' || P.state === 'down') && view !== 'car';
+  for (const m of mirrorParts) m.visible = on;
+  if (!on) return;
+  mirrorGlare.material.opacity = glareK * 0.9;
+  if (mirrorN++ & 1) return;
+  camera.getWorldPosition(_p); mirrorCam.position.copy(_p); mirrorCam.rotation.set(0, Math.PI, 0);
+  for (const m of mirrorParts) m.visible = false;
+  const bv = bars.visible, sv = sigG.visible; bars.visible = sigG.visible = false;
+  const pr = renderer.getRenderTarget(); renderer.setRenderTarget(mirrorRT); renderer.render(scene, mirrorCam); renderer.setRenderTarget(pr);
+  bars.visible = bv; sigG.visible = sv; for (const m of mirrorParts) m.visible = true;
+}
+/* ---------- デモモード(自動運転) ---------- */
+const demoBadge = document.createElement('div');
+demoBadge.style.cssText = 'position:fixed;top:10px;left:10px;z-index:6;display:none;background:rgba(200,40,40,.85);color:#fff;padding:4px 10px;border-radius:6px;font-size:13px';
+demoBadge.textContent = 'DEMO(自動運転) ― Enter/ESCで終了'; document.body.appendChild(demoBadge);
+function startDemo() { startGame('bike', 'free'); P.demo = true; demoBadge.style.display = 'block'; }
+function stopDemo() { P.demo = false; demoBadge.style.display = 'none'; toTitle(); }
+function demoAI(inp) {
+  inp.steer = clamp((-2.9 - P.x) * 1.4, -1, 1) * (Math.abs(-2.9 - P.x) > 0.12 ? 1 : 0); inp.boost = false; inp.brake = false;
+  const ahead = (x, z, d, w) => z < P.z - 1.5 && P.z - z < d && Math.abs(x - P.x) < w;
+  let stop = false;
+  for (const c of cars) if (!c.gone && c.kind !== 'behind' && c.kind !== 'reckless' && ahead(c.x, c.z, c.kind === 'oncoming' ? 8 : 16, 1.6) && c.v < 8) stop = true;
+  for (const p of peds) if (ahead(p.x, p.z, 14, 1.8)) stop = true;
+  for (const a of animals) if (!a.fly && ahead(a.x, a.z, 18, 3.5)) stop = true;
+  for (const r of riders) if (!r.falling && ahead(r.x, r.z, 14, 2.2)) stop = true;
+  for (const h of hazards) if (h.z < P.z - 1 && P.z - h.z < 10 && h.x != null && Math.abs(h.x - P.x) < 1.2) stop = true;
+  for (const [i, g] of chunks) {
+    const type = interType(i); if (!type) continue;
+    const line = chunkZ(i) + STOPD;
+    if (P.z > line - 1 && P.z - line < 14 && ((type === 'plain' && !g.userData.ok) || (type === 'signal' && sigState(i) !== 'g'))) stop = true;
+  }
+  if (stop) { inp.brake = true; if (P.speed < 0.3) P.stopT = Math.max(P.stopT, 0); }
+  if (P.state === 'down' || P.state === 'ready') inp.brake = true;
+}
+/* ---------- 一時停止メニュー(ESC) ---------- */
+const pauseEl = document.createElement('div');
+pauseEl.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:50';
+pauseEl.innerHTML = '<div class="card" style="display:block;position:static;transform:none;width:min(440px,92vw);max-height:90vh;overflow:auto;border:2px solid #6d8cf0">'
+  + '<div style="text-align:center;font-size:12px;letter-spacing:.4em;color:#9fb4ff">⏸ PAUSE</div>'
+  + '<h2 style="margin:2px 0 4px;text-align:center;font-size:30px">ポーズ中</h2>'
+  + '<div style="text-align:center;font-size:13px;color:#ffd78a;margin-bottom:8px">ゲームは止まっています(ESCで再開)</div>'
+  + '<div id="pInfo" style="font-size:13px;color:#9aa6bd;margin-bottom:8px;text-align:center"></div>'
+  + '<div class="btns"><button id="pResume" class="go">▶ ゲームに戻る</button></div>'
+  + '<div class="btns"><button id="pHelp">📖 操作説明</button><button id="pTitle">🏠 タイトルへ戻る</button></div>'
+  + '<div id="pHelpBox" style="display:none;font-size:13px;line-height:1.7;color:#cfd8f0;border-top:1px solid #2a3558;padding-top:8px">'
+  + '<b>走る</b>: A/D=ハンドル W=加速 S/Space=ブレーキ(止まってSでバック)<br><b>合図</b>: E=ベル/クラクション Q/R/F=手信号(左/右/停止)<br><b>降りる</b>: X=自転車から降りて押す/乗る(倒れた自転車や電柱は降りて通る)<br><b>視点</b>: B=後ろを向く V=後続車視点 ドラッグ=見回し<br><b>その他</b>: ESC=ポーズ 転倒しても5秒で起き上がれる / 時速8km以下の接触は無事 / 30km以上の転倒は命取り<br><b>天候</b>: 雨・雪・吹雪では路面が滑る。吹雪では車がほぼ見えない'
+  + '</div></div>';
+document.body.appendChild(pauseEl);
+$('pHelp').onclick = () => { const b = $('pHelpBox'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; };
+function setPause(on) {
+  if (on && !(P.state === 'play' || P.state === 'ready' || P.state === 'down')) return;
+  paused = on; pauseEl.style.display = on ? 'flex' : 'none';
+  if (on) { $('pInfo').textContent = `天候: ${W.name} / 路面: ${W.surf} / ${Math.floor(Math.max(0, P.dist))}m 走行 / ヒヤリ ${P.near}回`; $('pHelpBox').style.display = 'none'; }
+  if (actx) { if (on) actx.suspend(); else actx.resume(); }
+}
+$('pResume').onclick = () => setPause(false);
+$('pTitle').onclick = () => { setPause(false); toTitle(); };
+addEventListener('keydown', e => {
+  if (P.demo && (e.code === 'Escape' || e.code === 'Enter') && !e.repeat) { stopDemo(); e.stopImmediatePropagation(); return; }
+  if (e.code === 'Escape' && !e.repeat) setPause(!paused);
+}, true);
+$('bDemo').onclick = () => startDemo();
+function toTitle() { startGame('bike', course); P.state = 'title'; countEl.style.display = 'none'; $('result').style.display = 'none'; }
+$('bBike').onclick = () => startGame('bike'); $('bDrive').onclick = () => startGame('drive');
+document.querySelectorAll('#tabs button').forEach(b => { b.onclick = () => renderTab(b.dataset.tab); });
+let uiState = '';
+function uiTick() {
+  if (P.state !== uiState) {
+    const s = uiState = P.state;
+    $('menu').style.display = s === 'title' ? 'block' : 'none';
+    $('hud').style.display = s === 'title' ? 'none' : 'block';
+    $('info').style.display = (s === 'title' || s === 'ready') ? 'block' : 'none';
+    if (s === 'title' || s === 'ready' || s === 'play' || s === 'down') $('result').style.display = 'none';
+    if (s === 'title') renderTab();
+  }
+  if (warnEl.style.display === 'block' && (T > warnUntil || P.state !== 'play')) warnEl.style.display = 'none';
+  if (P.state !== 'title') {
+    const free = P.course === 'free';
+    hudT.textContent = fmtT(P.time); hudB.style.width = (free ? (P.dist % 500) / 5 : Math.min(100, P.dist / GOAL * 100)) + '%';
+    $('hG').textContent = free ? ' m (フリーラン)' : ' / ' + GOAL + ' m';
+    hudD.textContent = free ? Math.floor(P.dist) : Math.min(GOAL, Math.floor(P.dist)); hudS.textContent = Math.round(Math.abs(P.speed) * 3.6) + (P.speed < -0.1 ? ' R' : ''); hudN.textContent = P.near; $('hW').textContent = (P.walk ? ' ・降りて歩行中(Xで乗る)' : P.sw ? ' ・歩道(徐行のみ)' : '') + ' ・' + W.name + (W.grip < 1 ? '(路面注意)' : '');
+    $('hL').textContent = P.mode === 'drive' ? ` ・対向車線 ${Math.max(0, P.laneT).toFixed(1)}秒` : '';
+    $('hSig').textContent = P.mode === 'bike' && P.signal ? ` ・手信号:${{ left: '左', right: '右', stop: '停止' }[P.signal]}` : '';
+    hudS.style.color = P.mode === 'drive' ? (P.speed * 3.6 > 30.5 ? '#ffb070' : '#7fe') : '';          // 車: 30km/h超は危険色
+  }
+}
+
+/* =====================================================================
+   物理エンジン(cannon-es)
+   はね飛ばされた人・動物・自転車・自分の体は剛体として扱う。衝突時の相対速度・質量・向きから初速と回転を決め、
+   重力・路面との摩擦・反発・歩道/壁/車との衝突で、吹っ飛び方・転がり方・止まる位置が変わる。
+   (読み込めない時は、これまでの簡易モーションで代用する)
+   ===================================================================== */
+let CANNON = null;
+try { CANNON = await import('cannon-es'); } catch (e) { console.warn('cannon-es を読み込めないため、簡易モーションで代用します'); }
+const G_GROUND = 1, G_CAR = 2, G_BODY = 4;
+const phys = [], carBodies = new Map(), staticFollow = [];
+let world = null, mGround = null, mBody = null, selfPhys = false, selfRecs = [];
+if (CANNON) {
+  world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.82, 0) });
+  world.allowSleep = true; world.solver.iterations = 12;
+  mGround = new CANNON.Material('ground'); mBody = new CANNON.Material('body');
+  world.addContactMaterial(new CANNON.ContactMaterial(mGround, mBody, { friction: 0.75, restitution: 0.2 }));
+  const addStatic = (shape, x, y, z, rotX = 0) => {
+    const b = new CANNON.Body({ mass: 0, material: mGround, collisionFilterGroup: G_GROUND, collisionFilterMask: G_BODY });
+    b.addShape(shape); b.position.set(x, y, z); if (rotX) b.quaternion.setFromEuler(rotX, 0, 0); world.addBody(b); return b;
+  };
+  addStatic(new CANNON.Plane(), 0, 0, 0, -Math.PI / 2);                                              // 路面
+  for (const s of [-1, 1]) {
+    staticFollow.push(addStatic(new CANNON.Box(new CANNON.Vec3(0.75, 0.08, 300)), s * 4.3, 0.08, 0));   // 歩道(縁石の高さ0.16m)
+    staticFollow.push(addStatic(new CANNON.Box(new CANNON.Vec3(0.2, 6, 300)), s * 5.25, 6, 0));           // 建物の壁
+  }
+}
+// 親グループの変換を単位にして、子のローカル座標=ワールド座標にする(以後は子を直接物理に合わせて動かす → リプレイにもそのまま記録される)
+function flattenParent(obj) {
+  const par = obj.parent; if (!par || par === scene || par.userData.flat) return;
+  par.updateWorldMatrix(true, true);
+  const st = par.children.map(ch => { const p = new THREE.Vector3(), q = new THREE.Quaternion(); ch.getWorldPosition(p); ch.getWorldQuaternion(q); return [ch, p, q]; });
+  par.position.set(0, 0, 0); par.quaternion.identity(); par.updateMatrixWorld(true);
+  for (const [ch, p, q] of st) { ch.position.copy(p); ch.quaternion.copy(q); }
+  par.userData.flat = true;
+}
+// obj: 動かす見た目 / c: 重心(objのローカル座標) / half: 衝突用の直方体の半分の大きさ / mass: 質量(kg) / vel,ang: 初速(m/s)と角速度(rad/s)
+function physLaunch(obj, c, half, mass, vel, ang) {
+  if (!CANNON) return null;
+  flattenParent(obj);
+  obj.updateWorldMatrix(true, false);
+  const wp = new THREE.Vector3(), wq = new THREE.Quaternion(); obj.getWorldPosition(wp); obj.getWorldQuaternion(wq);
+  const cv = new THREE.Vector3(c[0], c[1], c[2]), ctr = cv.clone().applyQuaternion(wq).add(wp);
+  const body = new CANNON.Body({ mass, material: mBody, collisionFilterGroup: G_BODY, collisionFilterMask: G_GROUND | G_CAR,
+    linearDamping: 0.12, angularDamping: 0.35, allowSleep: true, sleepSpeedLimit: 0.25, sleepTimeLimit: 0.5 });
+  body.addShape(new CANNON.Box(new CANNON.Vec3(half[0], half[1], half[2])));
+  body.position.set(ctr.x, ctr.y, ctr.z); body.quaternion.set(wq.x, wq.y, wq.z, wq.w);
+  body.velocity.set(vel[0], vel[1], vel[2]); body.angularVelocity.set(ang[0], ang[1], ang[2]);
+  world.addBody(body);
+  const rec = { body, obj, c: cv }; phys.push(rec); return rec;
+}
+function physRemoveRec(rec) { const i = phys.indexOf(rec); if (i >= 0) { world.removeBody(rec.body); phys.splice(i, 1); } }
+function physClearAll() {
+  if (!CANNON) return;
+  for (const r of phys) world.removeBody(r.body);
+  phys.length = 0; for (const cb of carBodies.values()) world.removeBody(cb); carBodies.clear();
+  selfRider.userData.flat = false; selfPhys = false; selfRecs = [];
+}
+function stepPhysics(dt) {
+  if (!CANNON || !phys.length) return;
+  for (const b of staticFollow) b.position.z = P.z;
+  for (const [c, cb] of carBodies) if (c.gone) { world.removeBody(cb); carBodies.delete(c); }
+  for (const c of cars) {                                    // 近くの車は動く直方体として置く(吹っ飛んだ体が車にぶつかる/乗り上げる)
+    let cb = carBodies.get(c);
+    if (Math.abs(c.z - P.z) > 45) { if (cb) { world.removeBody(cb); carBodies.delete(c); } continue; }
+    if (!cb) {
+      cb = new CANNON.Body({ mass: 0, type: CANNON.Body.KINEMATIC, material: mGround, collisionFilterGroup: G_CAR, collisionFilterMask: G_BODY });
+      cb.addShape(new CANNON.Box(new CANNON.Vec3(c.hx, 0.7, c.hl)), new CANNON.Vec3(0, 0.7, 0)); world.addBody(cb); carBodies.set(c, cb);
+    }
+    cb.position.set(c.x, 0, c.z); cb.quaternion.setFromEuler(0, c.yaw, 0, 'YXZ');
+    const [vx, vz] = carVel(c); cb.velocity.set(vx, 0, vz);
+  }
+  world.step(1 / 60, dt, 4);
+  for (let i = phys.length - 1; i >= 0; i--) {
+    const r = phys[i];
+    r.obj.quaternion.set(r.body.quaternion.x, r.body.quaternion.y, r.body.quaternion.z, r.body.quaternion.w);
+    r.obj.position.set(r.body.position.x, r.body.position.y, r.body.position.z).sub(r.c.clone().applyQuaternion(r.obj.quaternion));
+    if (r.body.position.z > P.z + 70 || r.body.position.y < -6) { world.removeBody(r.body); phys.splice(i, 1); }
+  }
+}
+// 衝撃の強さ rel(相対速度)から、跳ね上がる速さと回転の速さを決める。速いほど高く、激しく回りながら飛ぶ
+const lift = rel => clamp(rel * 0.28, 0.5, 5.5), spin = sp => clamp(sp * 0.6, 1.2, 11);
+function tumbleAxis(v, k) { const sp = Math.hypot(v[0], v[2]) || 1; return [v[2] / sp * k, 0, -v[0] / sp * k]; }      // 進行方向へ前転する向きの回転
+function launchSelf(pv, ov, rel) {       // 自分(自転車+乗員)が衝突/転倒して投げ出される
+  if (!CANNON || selfPhys) return;
+  selfPhys = true;
+  const bike = selfRider.userData.bikeG, body = selfRider.userData.bodyG, up = lift(rel);
+  const k = clamp(0.45 + rel * 0.045, 0.45, 1.05);                          // 事故の度合い(衝突の相対速度)が大きいほど、相手の勢いをそのまま受けて遠く・高く吹っ飛ぶ
+  const bv = [pv[0] * 0.45 + ov[0] * (k + 0.1), up * 0.4, pv[1] * 0.45 + ov[1] * (k + 0.1)];
+  const hv = [pv[0] * 0.85 + ov[0] * k, up * (1 + rel * 0.02), pv[1] * 0.85 + ov[1] * k];
+  const tum = tumbleAxis(hv, spin(Math.hypot(hv[0], hv[2]))), jit = () => (Math.random() - 0.5) * 2.5, roll = -P.fallDir * 2.2;
+  selfRecs = [
+    physLaunch(bike, [0, 0.5, 0], [0.1, 0.5, 0.55], 15, bv, [tum[0] * 0.6 + jit(), 0, tum[2] * 0.6 + roll + jit()]),
+    physLaunch(body, [0, 1.0, 0.05], [0.22, 0.75, 0.2], 65, hv, [tum[0] + jit(), jit(), tum[2] + roll + jit()]),
+  ];
+}
+function hitSelf(obj, pv) {              // 衝突した相手の速度と自分の速度から、投げ出され方を決める
+  if (!CANNON || P.mode !== 'bike') return;
+  const ov = obj && obj.kind && obj.g ? carVel(obj) : [obj && obj.vx || 0, obj && obj.vz || 0];
+  const rel = Math.hypot(pv[0] - ov[0], pv[1] - ov[1]);
+  if (selfPhys) { for (const r of selfRecs) { r.body.velocity.x += ov[0] * 0.8; r.body.velocity.z += ov[1] * 0.8; r.body.velocity.y += Math.min(rel * 0.15, 3); } return; }   // 倒れている所をさらに轢かれる
+  if (P.fallStyle === 'flip') return;
+  launchSelf(pv, ov, rel);
+}
+function launchAnimal(a, vx, vz) {       // 車にはねられた動物
+  const mass = a.bike ? 90 : a.deer ? 120 : 90, up = lift(Math.hypot(vx, vz)), k = spin(Math.hypot(vx, vz)), jit = () => (Math.random() - 0.5) * 3;
+  const ax = tumbleAxis([vx, 0, vz], k);
+  a.fly = { phys: true, rec: physLaunch(a.g, [0, a.bike ? 0.85 : 0.7, 0], a.bike ? [0.3, 0.85, 0.55] : [0.25, 0.55, 0.65], mass, [vx * 0.9, up, vz * 0.9], [ax[0] + jit(), jit(), ax[2] + jit()]) };
+}
+function hitRider(r, vx, vz) {           // ドライバーモード: 自転車ごとはね飛ばされる(車の速度が高いほど遠く・高く飛ぶ)
+  if (r.falling) return; r.falling = true; r.style = 'hit'; r.fall = 0;
+  const sp = Math.hypot(vx, vz);
+  if (!CANNON) { r.fallDir = Math.sign(vx) || 1; r.ft = 0; r.bs = null; r.vx = vx; r.vz = vz; smashSound(); return; }
+  r.vx = r.vz = 0;
+  const bike = r.g.userData.bikeG, body = r.g.userData.bodyG, up = lift(sp), tum = tumbleAxis([vx, 0, vz], spin(sp)), jit = () => (Math.random() - 0.5) * 3;
+  r.rb = physLaunch(bike, [0, 0.5, 0], [0.1, 0.5, 0.55], 15, [vx * 0.6, up * 0.6, vz * 0.6], [tum[0] * 0.8 + jit(), jit(), tum[2] * 0.8 + jit()]);
+  r.rp = physLaunch(body, [0, 1.0, 0.05], [0.22, 0.75, 0.2], 65, [vx * 0.95, up, vz * 0.95], [tum[0] + jit(), jit(), tum[2] + jit()]);
+  smashSound();
+}
+
+/* =====================================================================
+   自転車モード: 死亡処理
+   ===================================================================== */
+const CAUSE_HIT = ['頭部外傷(急性硬膜下血腫)', '外傷性くも膜下出血', '頸髄損傷', '骨盤骨折による出血性ショック', '多発外傷(胸腹部臓器損傷)', '胸部大動脈損傷'];
+const CAUSE_POLE = ['頭蓋骨骨折・脳挫傷', '頸椎骨折(頸髄損傷)', '外傷性くも膜下出血'];
+const CAUSE_RUNOVER = ['多発肋骨骨折・肺挫傷(胸部圧迫)', '骨盤骨折による出血性ショック', '腹部臓器損傷による失血'];
+function crash(obj, title, causes) {
+  if (P.demo && P.state === 'play') { P.speed *= 0.3; if (T - scrapeT > 2) { scrapeT = T; flashMsg('(デモ中は自動で切り抜けます)', '🤖'); } return; }
+  const pv = [Math.sin(P.psi) * P.speed, -Math.cos(P.psi) * P.speed];       // 衝突時の自分の速度ベクトル
+  if (P.state === 'play') { P.fallT = 0; P.fallDir = Math.sign(obj.x - P.x) || (Math.random() < 0.5 ? 1 : -1); P.fallStyle = obj.style || ''; }
+  P.state = 'dead'; P.deadT = 0; P.speed = 0; P.lastTitle = title;
+  if (obj.g && obj.kind) { obj.v = 0; obj.vc = 0; obj.phase = 'stop'; }
+  crashSound();
+  hitSelf(obj, pv);
+  finishRun(false, title, '死因: ' + pick(causes));
+}
+// 車道に倒れる → 後続車が来る(ドライバーからは倒れた人は見えない)
+function goDown(dir, title) {
+  if (P.demo && P.state === 'play') { P.speed *= 0.3; return; }
+  if (P.state !== 'play') return;                  // 死亡後・転倒中に再び呼ばれると、死んだ(倒れた)まま起き上がって動けてしまっていた
+  P.walk = false;
+  const v0 = P.speed, pv = [Math.sin(P.psi) * v0, -Math.cos(P.psi) * v0];
+  if (v0 > 30 / 3.6) {                                           // 時速30km以上での転倒は、速いほど高い確率で致命傷になる
+    const pf = clamp(0.25 + (v0 - 30 / 3.6) * 0.1, 0.25, 0.9);
+    if (Math.random() < pf) { crash({ x: P.x }, title.replace(/し、後続車に轢かれた$/, '') + `(時速${Math.round(v0 * 3.6)}kmで転倒)`, ['頭蓋骨骨折・脳挫傷', '頸椎骨折(頸髄損傷)', '多発外傷(全身打撲)', '外傷性くも膜下出血']); return; }
+    flashMsg(`時速${Math.round(v0 * 3.6)}kmで転倒…運よく致命傷は免れた`, '⚠️');
+  }
+  P.state = 'down'; P.fallT = 0; P.speed = 0;
+  P.fallDir = dir; P.downTitle = title;
+  P.downX = clamp(P.x + dir * 1.5, -3.0, 1.5);
+  crashSound();
+  const c = addCar(P.downX, P.z + 62, 0, 12, 'behind'); c.obey = false; c.seekDown = true;       // 後続車は約5秒後に来る。起き上がった直後に避ける必要がある
+  if (Math.random() < 0.4) { const c2 = addCar(P.downX, P.z + 100, 0, 12, 'behind'); c2.obey = false; c2.seekDown = true; }      // 続けてもう1台来ることもある
+  flashMsg('転倒!5秒で起き上がれる…後続車が来る前に脇へ', '⚠️');
+  if (CANNON) launchSelf(pv, [0, 0], v0 * 0.5);                       // 慣性で滑りながら転がる。止まった所へ後続車が来る
+}
+// ドライバーモード: 事故
+function endDrive(title, sub) {
+  P.state = 'dead'; P.deadT = 0; P.speed = 0; P.lastTitle = title;
+  crashSound();
+  finishRun(false, title, sub);
+}
+
+/* =====================================================================
+   動物・罠(自転車モード)
+   ===================================================================== */
+const animals = [];
+function addAnimal(o = {}) {
+  const deer = o.deer ?? (Math.random() < 0.5), side = o.side || (Math.random() < 0.5 ? -1 : 1);
+  const g = new THREE.Group();
+  const m = new THREE.MeshStandardMaterial({ color: deer ? 0x6a5236 : 0x33291f, roughness: 1 });
+  if (deer) {
+    tube([0, 1.0, 0.5], [0, 1.02, -0.5], 0.2, m, g);
+    for (const sx of [-0.12, 0.12]) for (const sz of [-0.4, 0.4]) tube([sx, 0, sz], [sx, 0.9, sz], 0.04, m, g);
+    tube([0, 1.1, -0.45], [0, 1.65, -0.7], 0.08, m, g); tube([0, 1.65, -0.62], [0, 1.6, -0.95], 0.07, m, g);
+    for (const sx of [-0.08, 0.08]) { tube([sx, 1.72, -0.66], [sx * 2.2, 2.05, -0.6], 0.014, m, g); tube([sx * 1.6, 1.9, -0.62], [sx * 3, 1.98, -0.75], 0.012, m, g); }
+  } else {
+    tube([0, 0.6, 0.55], [0, 0.62, -0.5], 0.28, m, g);
+    for (const sx of [-0.17, 0.17]) for (const sz of [-0.4, 0.4]) tube([sx, 0, sz], [sx, 0.45, sz], 0.05, m, g);
+    tube([0, 0.58, -0.45], [0, 0.5, -0.95], 0.17, m, g);
+  }
+  const eyes = [];      // 暗闇で目だけがほんのり光る(アイシャイン)
+  for (const sx of [-0.07, 0.07]) {
+    const e = glow(deer ? 0xb8ffd0 : 0xffc890, 0.32, 1); e.position.set(sx, deer ? 1.68 : 0.62, deer ? -0.9 : -0.96); g.add(e); eyes.push(e);
+    const c = glow(0xffffff, 0.1, 1); c.position.copy(e.position); g.add(c);
+  }
+  g.rotation.y = o.head ? Math.PI : side * Math.PI / 2;           // head: こちらに向かって突進
+  const a = { g, deer, side, x: o.x ?? side * 4.6, z: o.z ?? P.z - 45, v: rnd(6.5, 9), vx: o.vx || 0, vz: o.vz || 0, jit: rnd(-0.25, 0.3), eyes, cued: !!o.vx, head: !!o.head, hitTitle: o.hitTitle || '', name: '' };
+  g.position.set(a.x, 0.16, a.z); scene.add(g); animals.push(a);
+}
+function clearAnimals() { animals.forEach(a => scene.remove(a.g)); animals.length = 0; }
+function knock(a) {
+  if (a.head) { crash(a, a.hitTitle, CAUSE_HIT); return; }          // 正面からの突進は即死級
+  goDown(Math.sign(a.vx) || 1, (a.name || (a.deer ? 'シカ' : 'イノシシ')) + 'にはねられ、車に轢かれた');
+}
+
+/* ---------- 歩行者 ---------- */
+const peds = [];
+function makePed(dark, phone) {
+  const g = new THREE.Group();
+  const cloth = new THREE.MeshStandardMaterial({ color: dark ? 0x0b0b0f : pick([0x6a5a48, 0x4a5a6a, 0x7a4a4a]), roughness: 0.95 });
+  const pants = new THREE.MeshStandardMaterial({ color: dark ? 0x09090c : 0x23262e, roughness: 0.95 });
+  const skin = new THREE.MeshStandardMaterial({ color: dark ? 0x3a2c26 : 0xb08a70, roughness: 0.8 });
+  tube([0, 0.95, 0], [0, 1.45, 0], 0.18, cloth, g);
+  const head = new THREE.Mesh(headGeo, skin); head.position.set(0, 1.62, 0); g.add(head);
+  const limbs = [];
+  for (const s of [-1, 1]) {
+    const lg = new THREE.Group(); lg.position.set(s * 0.09, 0.95, 0); tube([0, 0, 0], [0, -0.93, 0], 0.07, pants, lg); g.add(lg);
+    const ag = new THREE.Group(); ag.position.set(s * 0.22, 1.42, 0); tube([0, 0, 0], [0, -0.6, 0], 0.05, cloth, ag); g.add(ag);
+    limbs.push([lg, ag, s]);
+  }
+  if (phone) { const l = glow(0x9fc4ff, 0.5, 0.9); l.position.set(0.1, 1.4, -0.3); g.add(l); }
+  g.userData.swing = ph => { for (const [lg, ag, s] of limbs) { lg.rotation.x = Math.sin(ph) * 0.55 * s; ag.rotation.x = -Math.sin(ph) * 0.45 * s; } };
+  return g;
+}
+function addPed(x, z, o = {}) {
+  const g = makePed(o.dark !== false, !!o.phone); g.position.set(x, 0, z); g.rotation.order = 'YXZ'; scene.add(g);
+  const p = { g, x, z, vx: 0, vz: o.vz || 0, v: o.v || 1.5, ph: Math.random() * 6, scn: !!o.scn, passed: false, go: false, phone: !!o.phone, stepT: 0, cued: false, minD: 99, counted: false, hitTitle: '歩行者と衝突し、転倒した', title: '', sub: '', update: null };
+  peds.push(p); return p;
+}
+function clearPeds() { peds.forEach(p => scene.remove(p.g)); peds.length = 0; }
+// 衝突された歩行者: 衝撃の向きへ倒れる(車にはねられた時は宙に浮き、前方へ回転しながら投げ出される)
+function knockPed(p, vx, vz) {
+  p.vx = p.vz = 0; p.update = null; p.holdUntil = 0;
+  const sp = Math.hypot(vx, vz);
+  if (CANNON) {                                              // 速いほど高く・遠く・激しく回転しながら飛ぶ
+    const tum = tumbleAxis([vx, 0, vz], spin(sp)), jit = () => (Math.random() - 0.5) * 3;
+    p.phys = physLaunch(p.g, [0, 0.88, 0], [0.24, 0.86, 0.14], 70, [vx, lift(sp), vz], [tum[0] + jit(), jit(), tum[2] + jit()]);
+    p.fall = { phys: true };
+  } else p.fall = { t: 0, vx, vz, dir: Math.sign(vx) || 1, thrown: sp > 5 };
+  smashSound();
+}
+function dropPed(p) { if (p.phys) physRemoveRec(p.phys); scene.remove(p.g); }
+function animPedFall(p, dt) {
+  const f = p.fall; f.t += dt;
+  const k = Math.min(1, f.t / 0.5), e = k * k * (3 - 2 * k);
+  const fr = Math.max(0, 1 - (f.thrown ? 1.5 : 3) * dt); f.vx *= fr; f.vz *= fr;
+  p.x += f.vx * dt; p.z += f.vz * dt;
+  const air = f.thrown ? 1.3 * Math.sin(Math.min(1, f.t / 0.75) * Math.PI) : 0;
+  const tumble = f.thrown ? -2 * Math.PI * Math.min(1, f.t / 0.75) : 0;
+  p.g.rotation.set(-1.45 * e + tumble, p.g.rotation.y, f.dir * 0.35 * e);
+  p.g.position.set(p.x, (Math.abs(p.x) > 3.55 ? 0.16 : 0) + air + 0.12 * e, p.z);
+  p.g.userData.swing(f.t * 14 * Math.max(0, 1 - e));                                  // 倒れる間は手足がばたつく
+}
+// 走っている車(NPC)が、先の1.6秒間に通る範囲に入っていないか(歩行者・自転車が車を貫通しないように、その手前で待つ)
+function pathBlocked(x, z, vx, vz, half) {
+  for (const o of cars) {
+    if (o.v < 1) continue;
+    const [ex, ez] = carExt(o), [ovx, ovz] = carVel(o);
+    for (let t = 0; t <= 1.6; t += 0.4)
+      if (Math.abs(x + vx * t - (o.x + ovx * t)) < ex + half + 0.4 && Math.abs(z + vz * t - (o.z + ovz * t)) < ez + half + 0.4) return true;
+  }
+  return false;
+}
+const pedClearZ = z => cars.some(c => c.v < 0.5 && Math.abs(c.z - z) < 7) ? z - 14 : z;      // 駐車車両と重ならない位置に出す
+function updatePeds(dt) {
+  for (let i = peds.length - 1; i >= 0; i--) {
+    const p = peds[i];
+    if (p.fall) {
+      if (p.fall.phys) { if (p.phys) { p.x = p.phys.body.position.x; p.z = p.phys.body.position.z; } } else animPedFall(p, dt);
+      if (p.z > P.z + 45 || p.z < P.z - 200) { dropPed(p); peds.splice(i, 1); }
+      continue;
+    }
+    if (p.holdUntil) { if (T < p.holdUntil) { p.vx = p.vz = 0; } else { p.holdUntil = 0; p.vx = p.sv[0]; p.vz = p.sv[1]; } }   // ベルで立ち止まる
+    else if (p.update && P.state === 'play') p.update(dt);
+    const blocked = (p.vx || p.vz) && pathBlocked(p.x, p.z, p.vx, p.vz, 0.35);       // 走ってくる車の前には出ない(待つ)
+    if (!blocked) { p.x += p.vx * dt; p.z += p.vz * dt; }
+    const sp = blocked ? 0 : Math.hypot(p.vx, p.vz);
+    if (sp > 0.2) { p.ph += sp * dt * 4.5; p.g.userData.swing(p.ph); p.g.rotation.y = Math.atan2(-p.vx, -p.vz); }
+    p.g.position.set(p.x, Math.abs(p.x) > 3.55 ? 0.16 : 0, p.z);
+    if (P.state === 'play' && Math.hypot(P.x - p.x, P.z - p.z) < 32) {       // 音の合図: 通知音・足音
+      if (p.phone && !p.cued) { p.cued = true; sfx('chime', p.x, 1.3, p.z, 0.8); warnHint('前方で通知音(歩きスマホの人かも)'); }
+      if (sp > 0.2 && (p.stepT -= dt) <= 0) { p.stepT = 0.5; sfx('step', p.x, 0.1, p.z, 0.6); }
+    }
+    if (P.state === 'play') {
+      if (P.mode === 'bike') {
+        const d = Math.hypot(P.x - p.x, P.z - p.z);
+        if (Math.abs(P.x - p.x) < 0.55 && Math.abs(P.z - p.z) < 0.55 && Math.abs(P.speed) < SCRAPE_V) {      // 徐行・歩行ならぶつかっても軽く押し合うだけ
+          p.x += Math.sign(p.x - P.x || 1) * 0.04; P.speed *= 0.8; if (T - scrapeT > 2.5) { scrapeT = T; flashMsg('歩行者に軽く接触(時速8km以下なので無事)', '⚠️'); }
+        } else if (Math.abs(P.x - p.x) < 0.55 && Math.abs(P.z - p.z) < 0.55) { knockPed(p, (p.x - P.x) * 3 + (Math.random() - 0.5), -P.speed * 0.45); crash(p, p.hitTitle, CAUSE_POLE); }
+        else {
+          if (d < p.minD) p.minD = d;
+          if (!p.counted && p.z > P.z + 3 && p.minD < 1.3) { p.counted = true; P.near++; }
+        }
+      } else {
+        if (Math.abs(P.x - p.x) < 1.2 && Math.abs(P.z - p.z) < 2.5 && Math.abs(P.speed) < SCRAPE_V) {
+          p.x += Math.sign(p.x - P.x || 1) * 0.05; P.speed *= 0.8; if (T - scrapeT > 2.5) { scrapeT = T; flashMsg('歩行者に軽く接触(時速8km以下なので無事)', '⚠️'); }
+        } else if (Math.abs(P.x - p.x) < 1.2 && Math.abs(P.z - p.z) < 2.5) { knockPed(p, (p.x - P.x) * 2, -P.speed * 0.95); endDrive(p.title || '歩行者をはねた', p.sub || 'これは運転者の過失'); }
+        else if (!p.passed && p.z > P.z + 5) p.passed = true;
+        if (p.passed && !p.counted && p.scn) { p.counted = true; P.near++; }
+      }
+    }
+    if (p.z > P.z + 45 || p.z < P.z - 200 || Math.abs(p.x) > 9) { dropPed(p); peds.splice(i, 1); }
+  }
+}
+function spawnPedCross() {          // 道路を横断しようとする歩行者(横断歩道や、その場の無理な横断)
+  const side = Math.random() < 0.5 ? -1 : 1;
+  let z = P.z - rnd(45, 70);
+  const base = Math.floor(-P.z / CL);
+  for (let i = base + 1; i < base + 5; i++) if (interType(i) && chunkZ(i) < P.z - 40 && chunkZ(i) > P.z - 130) { z = chunkZ(i) + (Math.random() < 0.5 ? 4.9 : -4.9); break; }
+  const p = addPed(side * 4.1, pedClearZ(z), { dark: Math.random() < 0.7, phone: Math.random() < 0.3 });
+  p.hitTitle = '横断中の歩行者と衝突し、転倒した';
+  const jit = rnd(-0.8, 1.2);
+  p.update = () => {
+    if (!p.go) {
+      const tt = (P.z - p.z) / Math.max(P.speed, 1.5);
+      if (P.z > p.z + 1 && (tt <= Math.abs(P.x - p.x) / p.v + jit || (P.z - p.z < 14 && P.speed < 1))) { p.go = true; p.vx = -side * p.v; }   // 停止して待っていても渡り始める
+    } else if (Math.abs(p.x) > 4.3 && Math.sign(p.x) !== side) p.vx = 0;
+  };
+}
+function spawnWalker() {            // 歩道を同じ向きに歩く歩行者(歩道走行中の障害)
+  const p = addPed(rnd(-4.7, -4.3), P.z - 50, { dark: Math.random() < 0.6, vz: -rnd(1.1, 1.5) });
+  p.hitTitle = '歩道を歩く歩行者に衝突し、転倒した';
+}
+
+const hazards = []; let hazT = 6, potT = 4, swT = 3, shakeAmp = 0;
+const holeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const coneMat = new THREE.MeshStandardMaterial({ color: 0xe8631a, roughness: 0.6, emissive: 0x3a1204 }), coneGeo = new THREE.ConeGeometry(0.16, 0.5, 8);
+function addCone(g, x, z, y = 0) {          // 工事用コーン+警告灯(暗くても遠くから見える目印)
+  const c = new THREE.Mesh(coneGeo, coneMat); c.position.set(x, y + 0.25, z); g.add(c);
+  const s = glow(0xff9a30, 0.9, 0.85); s.position.set(x, y + 0.62, z); g.add(s);
+}
+const wetMat = new THREE.MeshBasicMaterial({ map: poolTex, color: 0x7fa6d6, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.5 });
+const crackMat = new THREE.MeshStandardMaterial({ transparent: true, roughness: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, map: canvasTex(256, 256, (g, w, h) => {
+  g.strokeStyle = 'rgba(0,0,0,0.95)'; g.lineWidth = 3;
+  for (let n = 0; n < 9; n++) { g.beginPath(); let x = w / 2 + rnd(-30, 30), y = h / 2 + rnd(-30, 30); g.moveTo(x, y); for (let k = 0; k < 7; k++) { x += rnd(-38, 38); y += rnd(-38, 38); g.lineTo(x, y); } g.stroke(); }
+}) });
+const manholeMat = new THREE.MeshStandardMaterial({ color: 0x50545e, metalness: 0.85, roughness: 0.25 });
+const leafMat = new THREE.MeshStandardMaterial({ color: 0x4a3a22, roughness: 0.5 });
+const potMat = new THREE.MeshStandardMaterial({ color: 0x9a4b2a, roughness: 1 });
+function addHazard(h) { scene.add(h.g); hazards.push(h); }
+function clearHazards() { hazards.forEach(h => scene.remove(h.g)); hazards.length = 0; }
+function spawnParked(z) {
+  // 無灯火の路上駐車。通過する1〜2m手前で、後方確認なしにドアが開く
+  const c = addCar(-3.5, z, 0, 0, 'parked', { dark: true });
+  c.doorWill = Math.random() < 0.65; c.doorA = 0;
+  for (const sx of [-0.7, 0.7]) { const s = glow(0xff7a1a, 0.7, 0.7); s.position.set(sx, 0.75, 2.3); c.g.add(s); }      // 駐車灯(目印)
+  c.door = new THREE.Group(); c.door.position.set(0.9, 0, -0.6); c.g.add(c.door);
+  box(c.g.userData.bm, 0.06, 0.85, 1.0, 0, 0.85, 0.5, c.door);
+  return c;
+}
+// 穴への落ち方: 前輪が穴にどれだけ入ったか(正=中に入っている)。ぴったりはまれば前転、縁にかかっただけならふらつく
+function holeDepthRound(cx, cz, r) { return r - Math.hypot(P.x - cx, (P.z - 0.5) - cz); }
+function holeDepthRect(cx, cz, hw, hl) { if (P.walk) return -1; return Math.min(hw - Math.abs(P.x - cx), hl - Math.abs((P.z - 0.5) - cz)); }
+function wobbleCheck(depth, st) {
+  if (P.state !== 'play' || st.w || depth > 0.1 || depth < -0.15) return;
+  st.w = true; P.wobT = 1.0; P.wobDir = Math.random() < 0.5 ? -1 : 1;
+  sfx('rattle', P.x, 0.3, P.z, 0.8); flashMsg('前輪が穴の縁にかかった…ふらついた!(急ハンドルは禁物)', '⚠️');
+}
+function engageHole(depth, st, x, title, causes) {
+  if (P.state !== 'play') return;
+  if (depth > 0.1) crash({ x, style: 'flip' }, title, causes); else wobbleCheck(depth, st);
+}
+function spawnPot() {               // 歩道を走っている時だけ降ってくる植木鉢
+  const g = new THREE.Group(), tFall = Math.sqrt(2 * 11.4 / 9.8);
+  const x = P.x + rnd(-0.4, 0.4), pz = P.z - Math.max(P.speed, 1) * tFall + rnd(-0.8, 0.8);
+  const pot = box(potMat, 0.3, 0.3, 0.3, x, 13, pz, g);
+  let vy = 0, checked = false, landed = false, whooshed = false;
+  sfx('rattle', x, 9, pz, 1.0); sfx('scream', x, 9, pz, 1.0, 0.25); warnHint('頭上でカタカタ…ベランダから物音と悲鳴!');
+  addHazard({ g, z: pz, update(dt) {
+    if (landed) return;
+    vy -= 9.8 * dt; pot.position.y += vy * dt;
+    if (!whooshed && pot.position.y < 8) { whooshed = true; sfx('whoosh', x, pot.position.y, pz, 1.0); }
+    if (!checked && pot.position.y <= 1.6) {
+      checked = true;
+      if (P.state === 'play' && Math.abs(P.x - x) < 0.4 && Math.abs(P.z - pz) < 0.45) crash({ x: P.x }, '歩道を走行中、ベランダから落ちてきた植木鉢が頭を直撃', ['頭蓋骨陥没骨折・脳挫傷', '急性硬膜外血腫']);
+    }
+    if (pot.position.y <= 0.15) { pot.position.y = 0.15; landed = true; smashSound(); }
+  } });
+}
+function spawnMama(sw) {            // 逆走してくるママチャリ(車道の左端、または歩道)
+  const g = new THREE.Group(), lit = Math.random() < 0.25, umb = Math.random() < 0.4;
+  const b = makeMama({ lit, umbrella: umb }); b.rotation.y = Math.PI; g.add(b);          // こちらに向かってくる
+  const bx = sw ? rnd(-4.6, -4.1) : rnd(-3.2, -2.1), v = rnd(3.8, 5.5);
+  let bz = P.z - 60, ph = 0, wob = Math.random() * 6, sq = 0, belled = false, holdUntil = 0, falling = false, fallK = 0, fallDir = 1, slide = 0;
+  const topple = dir => { if (!falling) { falling = true; fallDir = dir; } };          // ママチャリも倒れる
+  const h = { g, z: bz, x: bx, mult: 0.9, update(dt) {
+    const held = falling || T < holdUntil;
+    if (!held) { bz += v * dt; wob += dt * 2.2; ph += dt * 6; }
+    h.z = bz;
+    const x = bx + (umb || !lit ? Math.sin(wob) * 0.35 : 0); h.x = x;                  // 傘さし・無灯火はふらつく
+    if (falling) { fallK = Math.min(1, fallK + dt / 0.4); bz += slide * dt; slide *= Math.max(0, 1 - 3 * dt); }     // 倒れながら路面を滑る
+    b.position.set(x, (sw ? 0.16 : 0) + 0.15 * fallK, bz); b.rotation.z = fallDir * 1.45 * fallK;
+    if (!held) b.userData.anim(ph);
+    const dd = Math.hypot(P.x - x, P.z - bz);
+    if (P.state === 'play' && dd < 36 && !held) {                                      // 音の合図: チェーンのきしみ・ベル
+      sq -= dt; if (sq <= 0) { sq = 0.55; sfx('squeak', x, 0.5, bz, 0.7); }
+      if (!belled && dd < 22) { belled = true; sfx('bell', x, 1.1, bz, 1.0); warnHint('前方から「チリンチリン」…自転車のベルときしみ音'); }
+    }
+    if (P.state === 'play' && Math.abs(P.x - x) < 0.55 && Math.abs(P.z - bz) < 0.75) {
+      slide = -P.speed * 0.5; topple(Math.sign(P.x - x) || 1);                          // 衝突でこちらも倒れ、勢いで滑る
+      crash({ x }, sw ? '歩道を逆走してきたママチャリと正面衝突' : '無灯火で逆走してきたママチャリと正面衝突', CAUSE_HIT);
+    }
+  } };
+  h.knock = (vx, vz) => { if (!falling) { slide = vz * 0.6; topple(Math.sign(vx) || 1); } };       // 走っている車にはねられても倒れる
+  h.bell = (ok, d) => {                                                                // こちらがベルを鳴らした時の反応
+    if (falling) return '倒れていて動かない';
+    if (d < 8 && Math.random() < 0.3) { topple(Math.random() < 0.5 ? -1 : 1); return 'ベルに驚いてママチャリが転倒した!'; }
+    if (ok) { holdUntil = T + 3.5; return 'ママチャリが急ブレーキで止まった!'; }
+    return 'ママチャリは気付かない…';
+  };
+  addHazard(h);
+}
+/* ---------- ベル(自転車) / クラクション(車) ----------
+   前方の歩行者・動物・ママチャリ・自転車に鳴らすと、確率で止まってくれる。
+   遠くから鳴らすほど成功率が高く、直前だと低い(運ゲー)。 */
+let bellCd = 0;
+const bellProb = d => clamp(0.12 + 0.83 * (d - 5) / 35, 0.1, 0.95);      // 40m先なら95%、20mなら約54%、10mなら約29%、5m以内は約12%
+/* 自転車から降りて歩く(X): 事故で倒れた自転車や障害物の脇を、押して通過できる。道路の右側(対向側)や右の歩道も歩ける。S=後退 */
+function toggleWalk() {
+  if (P.state !== 'play' || P.mode !== 'bike') return;
+  if (!P.walk) {
+    if (P.speed > 2) { flashMsg('降りるには、まず減速して止まる(ブレーキ)'); return; }
+    P.walk = true; P.speed = 0; P.psi = 0; P.signal = ''; flashMsg('自転車を降りて歩く(W=前進 S=後退 A/D=左右 X=乗る)');
+  } else {
+    if (P.x > -0.6) { flashMsg('右側では乗れない。左側の車線か歩道へ戻って乗る'); return; }
+    P.walk = false; P.speed = 0; flashMsg('自転車に乗った');
+  }
+}
+let revBeepT = 0;
+function revBeep(dt) {              // バック中の「ピーッ、ピーッ」
+  revBeepT -= dt; if (revBeepT > 0 || !actx) return; revBeepT = 0.9;
+  const o = actx.createOscillator(), g = actx.createGain(); o.type = 'square'; o.frequency.value = 1000;
+  g.gain.setValueAtTime(0.05, actx.currentTime); g.gain.setValueAtTime(0.0001, actx.currentTime + 0.35);
+  o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.36);
+}
+function ringBell() {
+  if (P.state !== 'play' || bellCd > 0) return;
+  bellCd = 0.7;
+  const drive = P.mode === 'drive', fz = drive ? P.z - 2.2 : P.z;
+  sfx(drive ? 'horn' : 'bell', P.x, 1.2, P.z - 0.5, 1.0);
+  let best = null;
+  const consider = (x, z, lat, mult, apply) => {
+    const d = fz - z; if (d < 2 || d > 45 || Math.abs(x - P.x) > lat) return;
+    if (!best || d < best.d) best = { d, mult, apply };
+  };
+  for (const h of hazards) if (h.bell) consider(h.x, h.z, 4.5, h.mult || 1, h.bell);
+  for (const p of peds) consider(p.x, p.z, 6.5, 1, ok => {
+    if (ok) { p.sv = [p.vx, p.vz]; p.holdUntil = T + 3.2; }
+    return ok ? '歩行者が立ち止まった!' : '歩行者は気付かない…';
+  });
+  for (const a of animals) if (!a.fly) consider(a.x, a.z, 8, a.head ? 0.45 : a.bike ? 0.9 : 0.7, ok => {
+    if (ok && !a.bike) {                                  // ベルの音で威嚇: 驚いて道路から逃げていく
+      a.scared = true; a.holdUntil = 0; a.manual = false;
+      a.vx = a.head ? (a.x >= P.x ? 1 : -1) * 7 : (a.x < 0 ? -1 : 1) * a.v * 1.3; a.vz = a.head ? 0 : a.vz;
+      a.g.rotation.y = a.vx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      sfx(a.deer ? 'cry' : 'growl', a.x, 1, a.z, 0.9);
+    } else if (ok) a.holdUntil = T + 6;
+    return ok ? (a.bike ? '自転車が止まった!' : a.head ? 'イノシシがベルに驚いて逃げた!' : '動物がベルに驚いて逃げた!') : (a.head ? 'イノシシは止まらない…' : '気付かれなかった…');
+  });
+  for (const r of riders) if (!r.falling) consider(r.x, r.z, 6, 0.9, ok => {
+    if (ok) { r.sv = [r.vx, r.vz]; r.holdUntil = T + 3; }
+    return ok ? '自転車が止まった!' : '気付かれなかった…';
+  });
+  if (!best) return;
+  const pr = clamp(bellProb(best.d) * best.mult, 0.05, 0.97);
+  flashMsg(`${best.apply(Math.random() < pr, best.d)}(成功率${Math.round(pr * 100)}%・距離${Math.round(best.d)}m)`);
+}
+function spawnSwHazard() {          // 歩道の障害: 歩行者 / 逆走ママチャリ / 立て看板 / ふたの外れた穴
+  const r = Math.random(), z = P.z - 45, g = new THREE.Group();
+  if (r < 0.22) spawnWalker();
+  else if (r < 0.4) spawnMama(true);
+  else if (r < 0.58) {                         // 事故で倒れたままの自転車が歩道をふさいでいる。乗ったままだと乗り上げて転ぶ → Xで降りて押して通る
+    const x = rnd(-4.7, -4.1), lay = new THREE.Group(), o = makeRider({ dark: false });
+    o.userData.bodyG.visible = false; lay.add(o); lay.rotation.z = 1.5; lay.position.set(0, 0.2, 0);
+    const out = new THREE.Group(); out.add(lay); out.rotation.y = 1.15 + rnd(-0.2, 0.2); out.position.set(x + 0.5, 0, z); g.add(out);
+    addHazard({ g, z, update() { if (P.state === 'play' && !P.walk && Math.abs(P.x - x) < 0.95 && Math.abs(P.z - z) < 0.7) crash({ x }, '歩道に倒れていた自転車に乗り上げて転倒', CAUSE_POLE); } });
+  } else if (r < 0.76) {
+    const x = rnd(-4.7, -4.0), bm = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.8 });
+    box(bm, 0.5, 0.9, 0.05, x, 0.61, z - 0.18, g).rotation.x = 0.25; box(bm, 0.5, 0.9, 0.05, x, 0.61, z + 0.18, g).rotation.x = -0.25;
+    box(whiteMat, 0.4, 0.06, 0.06, x, 0.95, z, g);
+    addHazard({ g, z, update() { if (P.state === 'play' && !P.walk && Math.abs(P.x - x) < 0.5 && Math.abs(P.z - z) < 0.4) crash({ x }, '歩道の立て看板に衝突して転倒', CAUSE_POLE); } });
+  } else {
+    const x = rnd(-4.6, -4.0), l = rnd(1.4, 2.0);
+    box(curbMat, 1.0, 0.02, l + 0.14, x, 0.171, z, g); box(holeMat, 0.86, 0.02, l, x, 0.181, z, g);
+    addCone(g, x - 0.7, z + l / 2 + 0.4, 0.16); addCone(g, x + 0.7, z + l / 2 + 0.4, 0.16);      // 警告灯の目印
+    const swst = { w: false };
+    addHazard({ g, z, update() { wobbleCheck(holeDepthRect(x, z, 0.5, l / 2), swst);
+      if (P.state === 'play' && holeDepthRect(x, z, 0.5, l / 2) > 0.1) crash({ x, style: 'flip' }, '歩道の工事の穴(落とし穴)に前転して転落', ['頸椎骨折(頸髄損傷)', '頭蓋骨骨折・脳挫傷']); } });
+  }
+}
+function spawnHazard() {
+  const r = Math.random(), z = P.z - 50, g = new THREE.Group();
+  if (r < 0.14) {
+    box(curbMat, 0.62, 0.02, 1.9, -3.2, 0.006, z, g); box(holeMat, 0.5, 0.02, 1.7, -3.22, 0.012, z, g);
+    addCone(g, -2.75, z + 1.4); addCone(g, -2.75, z - 1.4);          // 警告灯の目印
+    const gst = { w: false };
+    addHazard({ g, z, update() {
+      wobbleCheck(holeDepthRect(-3.2, z, 0.31, 0.85), gst);
+      if (P.state === 'play' && holeDepthRect(-3.2, z, 0.31, 0.85) > 0.1) crash({ x: -4, style: 'flip' }, '蓋のない側溝に転落(前転して転落)', ['頸椎骨折(頸髄損傷)', '頭蓋骨骨折・脳挫傷']);
+    } });
+  } else if (r < 0.3) {
+    const leaves = Math.random() < 0.5;
+    const x = leaves ? -2.95 : rnd(-3.1, -2.8), rx = leaves ? 0.55 : 0.42, rz = leaves ? 1.3 : 0.42;
+    const m = leaves ? new THREE.Mesh(unitPlane, leafMat) : new THREE.Mesh(new THREE.CircleGeometry(0.38, 20), manholeMat);
+    if (leaves) m.scale.set(1.0, 2.5, 1);
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.012, z); g.add(m);
+    const wet = new THREE.Mesh(unitPlane, wetMat); wet.rotation.x = -Math.PI / 2; wet.scale.set(rx * 2 + 0.8, rz * 2 + 0.8, 1); wet.position.set(x, 0.016, z); g.add(wet);   // 濡れて光る路面(目印)
+    let hinted = false;
+    addHazard({ g, z, update() {
+      if (!hinted && P.state === 'play' && P.z > z && P.z - z < 24) { hinted = true; warnHint('路面が濡れて光っている…ブレーキ・急ハンドルは避けて直進'); }
+      if (P.state === 'play' && Math.abs(P.x - x) < rx && Math.abs(P.z - z) < rz && (P.braking || Math.abs(P.psi) > 0.12))
+        goDown(1, (leaves ? '濡れた落ち葉' : '濡れたマンホール') + 'でスリップして車道側に転倒、後続車に轢かれた');
+    } });
+  } else if (r < 0.44) {
+    spawnParked(z);
+  } else if (r < 0.62) {            // 落とし穴1: ふたのないマンホール(暗くて見えない)
+    const x = rnd(-3.0, -0.9);
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.4, 20), holeMat); hole.rotation.x = -Math.PI / 2; hole.position.set(x, 0.014, z); g.add(hole);
+    const rim = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.52, 20), manholeMat); rim.rotation.x = -Math.PI / 2; rim.position.set(x, 0.012, z); g.add(rim);
+    addCone(g, x - 0.7, z + 0.6); addCone(g, x + 0.7, z + 0.6);      // 警告灯の目印
+    const mst = { w: false };
+    addHazard({ g, z, update() { engageHole(holeDepthRound(x, z, 0.4), mst, x, 'ふたのないマンホールに前輪がぴったりはまり、前転して転落', CAUSE_POLE); } });
+  } else if (r < 0.8) {             // 落とし穴2: 予兆(ひび割れ・地鳴り・揺れ・小石・砂ぼこり)のあと、路面が崩れる
+    const w = rnd(1.5, 2.0), l = rnd(2.2, 3.0), cx = rnd(-2.6, -1.3);
+    const cr = new THREE.Mesh(unitPlane, crackMat); cr.rotation.x = -Math.PI / 2; cr.scale.set(w + 0.9, l + 0.9, 1); cr.position.set(cx, 0.014, z); g.add(cr);
+    const pit = box(holeMat, w, 0.03, l, cx, 0.022, z, g), rim = box(curbMat, w + 0.3, 0.02, l + 0.3, cx, 0.012, z, g);
+    pit.visible = rim.visible = false;
+    const dust = [0, 1, 2].map(k => { const s = glow(0x8a8a90, 1.4, 0.3); s.material = s.material.clone(); s.material.opacity = 0; s.position.set(cx + (k - 1) * w * 0.35, 0.45, z + (k - 1) * l * 0.3); g.add(s); return s; });
+    let st = 0, rumT = 0; const wst = { w: false };
+    addHazard({ g, z, update(dt) {
+      const d = P.z - z;                                            // 手前(正)から近づく
+      if (P.state === 'play' && d > l / 2 && d < 30) {
+        if (st < 1) { st = 1; warnHint('地鳴り…前方の路面にひび割れ'); }
+        rumT -= dt; if (rumT <= 0) { rumT = 0.9; sfx('rumble', cx, 0, z, 1.0); }
+        shakeAmp = Math.max(shakeAmp, 0.004 + 0.012 * (1 - d / 30));
+        const k = clamp(1 - (d - 8) / 20, 0, 1);                    // 近づくほど砂ぼこりが濃くなる
+        for (const s of dust) s.material.opacity = 0.35 * k;
+        if (d < 18 && st < 2) { st = 2; sfx('gravel', cx, 0.3, z, 1.0); warnHint('路面から小石がこぼれる'); }
+      }
+      if (st < 3 && P.state === 'play' && d > l / 2 && d < 8.5) { st = 3; pit.visible = rim.visible = true; cr.visible = false; sfx('crumble', cx, 0, z, 1.4); shakeAmp = 0.03; }
+      if (st === 3) wobbleCheck(holeDepthRect(cx, z, w / 2, l / 2), wst);
+      if (st === 3 && P.state === 'play' && holeDepthRect(cx, z, w / 2, l / 2) > 0.1) crash({ x: cx, style: 'flip' }, '突然路面が陥没し、前転して落とし穴に転落', ['頸椎骨折(頸髄損傷)', '多発外傷(全身打撲)', '頭蓋骨骨折・脳挫傷']);
+    } });
+  } else if (r < 0.9) {
+    spawnMama(false);
+  } else {
+    const b = makeRider({ dark: true }); b.rotation.y = Math.PI;
+    const x = rnd(-3.2, -2.9); let bz = P.z - 55, ph = 0, holdUntil = 0, sq = 0; g.add(b);
+    const h = { g, z: bz, x, mult: 0.9, update(dt) {
+      const held = T < holdUntil;
+      if (!held) { bz += 5 * dt; ph += dt * 11; }
+      h.z = bz; b.position.set(x, 0, bz); if (!held) b.userData.anim(ph);
+      const dd = P.z - bz;
+      if (P.state === 'play' && !held && dd > 0 && dd < 36) { sq -= dt; if (sq <= 0) { sq = 0.5; sfx('squeak', x, 0.5, bz, 0.7); } }   // 音の合図: チェーンのきしみ
+      if (P.state === 'play' && Math.abs(P.x - x) < 0.5 && Math.abs(P.z - bz) < 0.7) crash({ x }, '無灯火の逆走自転車と正面衝突', CAUSE_HIT);
+    } };
+    h.bell = ok => { if (ok) { holdUntil = T + 3.5; return '逆走自転車が止まった!'; } return '逆走自転車は気付かない…'; };
+    addHazard(h);
+  }
+}
+
+/* =====================================================================
+   自転車モード: 車の出現
+   ===================================================================== */
+const CAR_MAX_X = -1.4;     // 自転車を避けて寄れる限界(センターラインは越えない)
+const SAFE_V = 8.4;         // 車: 時速30km以下(秒速8.4m)で走っていれば、飛び出しや逆走は起きない(相手が気付いて避ける)
+const SEE = 14;             // 無灯火の自転車にドライバーが気付ける距離
+const SAFE_X = -2.75;       // これより右を走っていると車は避けきれない
+const RECKLESS = ['居眠り運転', '脇見運転', '飲酒運転', '運転中の急病', 'ペダルの踏み間違い', 'ながらスマホ'];
+let dirT = 4; const usedInter = new Set();
+function spawnCross() {
+  const it = findInter('plain', 32, 200); if (!it || usedInter.has(it.i)) return false;
+  usedInter.add(it.i);
+  const t = it.d / Math.max(P.speed, 3.5), v = rnd(9, 12.5), side = Math.random() < 0.5 ? -1 : 1;
+  addCar(P.x + side * v * (t + rnd(-0.5, 0.9)), it.cz + (side > 0 ? 2 : -2), side * Math.PI / 2, v, 'cross');
+  return true;
+}
+const spawnOncoming = () => addCar(LANE, P.z - 85, Math.PI, rnd(11, 14), 'oncoming');
+const spawnBehind = (d = 50) => addCar(-LANE, P.z + d, 0, Math.max(P.speed, 5) + rnd(8, 12), 'behind');
+// 背後からの暴走車。lock=true は「止まっている(停止線や信号待ちの)自転車」を狙って突っ込んでくる強制追突。
+// ただし避ける余地がある: 24m手前で進路が固定されるので、そこまでに動いて横へ避ければ当たらない。走っている間は狙われない。
+function spawnReckless(d = 55, lock = false) {
+  const c = addCar(lock ? clamp(P.x, -3.3, -0.5) : -LANE, P.z + d, 0, Math.max(P.speed, 4) + rnd(10, 14), 'reckless'); c.reason = pick(RECKLESS); c.lock = lock;
+  sfx('rev', c.x, 0.6, c.z, 1.0);
+  warnHint(lock ? '背後から暴走車!止まっていると危険…動いて横へ避けて' : '背後から異常に速いエンジン音…道の左端に寄って'); return c;
+}
+function spawnTruckTurn() {         // ウインカーなしの左折巻き込み
+  const it = findInter('plain', 55, 110); if (!it || usedInter.has(it.i)) return false;
+  usedInter.add(it.i);
+  const c = addCar(-1.1, P.z + 30, 0, 12, 'truck', { type: 'truck' });
+  c.phase = 'follow'; c.cz = it.cz; c.followT = 0; return true;
+}
+/* ---------- 電柱事故: 居眠り運転の車が歩道へ逸脱 → 電柱に激突 → 電柱が倒れてくる ---------- */
+const poles = [];
+const POLE_L = 8.5;
+const crossOpen = z => { const i = Math.round(-z / CL); return !!interType(i) && Math.abs(z - chunkZ(i)) < 4.2; };      // 交差道路の口(壁がない場所)
+function makePole() {
+  const g = new THREE.Group();
+  const cyl = new THREE.Mesh(unitCyl, concMat); cyl.scale.set(0.15, POLE_L, 0.15); cyl.position.y = POLE_L / 2; g.add(cyl);
+  box(poleMat, 1.7, 0.09, 0.09, 0, POLE_L - 0.6, 0, g); box(poleMat, 1.2, 0.08, 0.08, 0, POLE_L - 1.4, 0, g);
+  for (const dx of [-0.8, 0, 0.8]) box(lampOff, 0.03, 0.03, 4.0, dx, POLE_L - 0.55, 0, g);        // 電線
+  const sp = glow(0x9fd4ff, 2.4, 0.9); sp.material = sp.material.clone(); sp.material.opacity = 0; sp.position.set(0, POLE_L - 0.6, 0); g.add(sp);   // 切れた電線の火花
+  g.userData.spark = sp;
+  return g;
+}
+// 倒れて(倒れかけて)いる電柱が、(x,z)にいる人・車に当たっているか。電柱は根元を軸に道路側へ回転する。
+function poleHit(E, x, z, half, hTop = 2.3) {
+  if (!E.fall || Math.abs(z - E.z) > half + 0.15) return false;
+  const s = (E.x - x) * E.dir / Math.max(Math.sin(E.th), 0.02);          // 根元からの距離
+  if (s < 0 || s > POLE_L) return false;
+  const y = s * Math.cos(E.th);                                           // その位置での電柱の高さ
+  return y < hTop && y > -0.2;
+}
+function hitPole(c, E) {            // 居眠り運転の車が電柱に激突 → 車はほぼ止まり、電柱が折れて倒れ始める
+  c.acc.done = true;
+  startWreck(c, 0, (Math.abs(c.yaw) < 1 ? -1 : 1) * 1.5, (Math.random() < 0.5 ? -1 : 1) * 0.5);
+  E.fall = true; E.w = 0.25;
+  smashSound(); sfx('crumble', E.x, 1, E.z, 1.4); sfx('creak', E.x, 4, E.z, 1.2); shakeAmp = Math.max(shakeAmp, 0.02);
+  warnHint('電柱が折れた…倒れてくる!');
+}
+// 道端の街灯・電柱はすべて当たり判定を持つ。車が当たると車は止まり、勢い(6m/s以上)があれば電柱が折れて道路側へ倒れてくる
+function felledPole(info, dir) {
+  for (const m of info.meshes) m.visible = false;
+  info.done = true;
+  const g = makePole(); g.position.set(info.x, 0, info.z); scene.add(g);
+  const E = { g, x: info.x, z: info.z, side: dir, dir, th: 0, w: 0.25, fall: true, down: false, t: 0, rm: 0 };
+  poles.push(E);
+  sfx('creak', info.x, 4, info.z, 1.2); warnHint('電柱が折れた…倒れてくる!');
+}
+// 道端の固定物(電柱・街灯・自販機・信号柱・標識)。乗っていれば激突、歩いていれば行く手をふさがれる
+function staticPlayerHits() {
+  for (const g of chunks.values()) {
+    const list = [...(g.userData.cols || [])];
+    for (const info of [g.userData.pole, g.userData.upole]) if (info && !info.done) list.push({ x: info.x, z: info.z, hx: 0.15, hz: 0.15, t: info === g.userData.pole ? '街灯' : '電柱' });
+    for (const c of list) {
+      const ox = c.hx + 0.3 - Math.abs(P.x - c.x), oz = c.hz + 0.3 - Math.abs(P.z - c.z);
+      if (ox <= 0 || oz <= 0) continue;
+      if (P.walk) { if (ox < oz) P.x += Math.sign(P.x - c.x || 1) * ox; else P.z += Math.sign(P.z - c.z || 1) * oz; P.speed *= 0.5; }
+      else if (P.state === 'play' && (c.t !== '街灯' && c.t !== '電柱')) { crash(c, c.t + 'に激突！', CAUSE_POLE); return; }
+    }
+  }
+}
+function carPoleHits(c) {
+  if (c.pHit || c.stopped || c.kind === 'parked' || c.kind === 'truck' || c.v < 2 || Math.abs(c.x) > 6.5) return;
+  for (const g of chunks.values()) {
+    for (const info of [g.userData.pole, g.userData.upole, ...(g.userData.cols || [])]) {
+      if (!info || info.done || Math.abs(info.z - c.z) > 6) continue;
+      const [gx, gz] = carGap(c, info.x, info.z);
+      if (gx > 0.12 + (info.hx || 0) || gz > 0.12 + (info.hz || 0)) continue;
+      c.pHit = true;
+      const sp = c.v, [vx, vz] = carVel(c);
+      startWreck(c, vx * 0.1, vz * 0.1, (Math.random() < 0.5 ? -1 : 1) * rnd(0.3, 1.2));         // 衝突して、ほぼその場で止まる
+      c.title = c.title || '電柱に衝突した車の事故に巻き込まれた';
+      smashSound(); sfx('crumble', info.x, 1, info.z, 1.3); shakeAmp = Math.max(shakeAmp, 0.02);
+      if (sp > 6 && info.meshes) felledPole(info, info.x > 0 ? 1 : -1);
+      else warnHint(info.meshes ? '車が電柱に衝突して止まった' : `車が${info.t}に衝突して止まった`);
+      return;
+    }
+  }
+}
+function spawnPoleCrash(side) {     // side: +1=右の歩道(対向車線の車が逸脱) / -1=左の歩道(自車線の前を走る車が逸脱)
+  if (poles.length || cars.some(c => c.acc && c.acc.type === 'pole')) return;
+  const bx = side > 0 ? 3.95 : -4.0;
+  let zp, c;
+  if (side > 0) { const t1 = 30 / Math.max(P.speed, 3.5); zp = P.z - 30 - P.speed * t1; c = addCar(LANE, zp - 13 * t1, Math.PI, 13, 'acc'); }
+  else { zp = P.z - 62; c = addCar(-LANE, zp + 24, 0, 11, 'acc'); }
+  const g = makePole(); g.position.set(bx, 0, zp); scene.add(g);
+  const E = { g, x: bx, z: zp, side, dir: side > 0 ? 1 : -1, th: 0, w: 0, fall: false, down: false, t: 0, rm: 0 };
+  poles.push(E);
+  c.acc = { type: 'pole', pole: E }; c.title = '居眠り運転の車が電柱に激突し、倒れてきた電柱の下敷きになった';
+  sfx('rev', c.x, 0.6, c.z, 0.6);
+}
+function updatePoles(dt) {
+  for (let i = poles.length - 1; i >= 0; i--) {
+    const E = poles[i];
+    if (!E.fall) continue;
+    E.t += dt;
+    if (!E.down) {                                          // 倒れるほど加速し、地面に叩きつけられて少し跳ねる
+      E.w += (1.5 * 9.8 / POLE_L) * Math.sin(Math.max(E.th, 0.1)) * 2.2 * dt;
+      E.th += E.w * dt;
+      if (E.th >= 1.52) {
+        E.th = 1.52;
+        if (E.w > 0.9) { E.w = -E.w * 0.22; sfx('crumble', E.x, 0.5, E.z, 1.5); shakeAmp = Math.max(shakeAmp, 0.035); }
+        else { E.w = 0; E.down = true; E.rm = 0; }
+      }
+    } else {
+      if (E.rm === 0) warnHint(P.mode === 'drive' ? '電柱が道をふさいだ。止まって撤去を待つか、Sでバック' : '電柱が倒れて道をふさいだ。Xで降りれば跨いで通れる');
+      E.rm += dt; if (E.rm > 7) { scene.remove(E.g); poles.splice(i, 1); flashMsg('倒れた電柱が撤去された'); continue; }     // 7秒後に撤去
+    }
+    E.g.rotation.z = E.dir * E.th;
+    E.g.userData.spark.material.opacity = E.t < 7 ? (Math.random() < 0.5 ? 0.9 : 0.1) : 0;      // 切れた電線の火花
+    if (P.state !== 'play') continue;
+    if (P.mode === 'bike') {
+      if (E.t < 7 && poleHit(E, P.x, P.z, 0.9)) {          // 切れた電線(火花が出ている間)に少しでも触れると感電する
+        shakeAmp = Math.max(shakeAmp, 0.05);
+        crash({ x: P.x }, '倒れた電柱の切れた電線に触れて感電した', ['感電死(高圧電線)', '感電による心室細動・心停止', '重度の電撃傷']);
+      } else if (!(P.walk && E.down) && poleHit(E, P.x, P.z, 0.35)) crash({ x: P.x }, E.down ? '倒れた電柱に衝突して転倒' : '倒れてきた電柱の下敷きになった', E.down ? CAUSE_POLE : CAUSE_RUNOVER);
+    } else if (!(E.down && Math.abs(P.speed) < 1.5) && [P.x - 0.8, P.x, P.x + 0.8].some(x => poleHit(E, x, P.z, 2.4))) {
+      endDrive(E.down ? '倒れた電柱に衝突した' : '倒れてきた電柱が車を直撃した', '居眠り運転の車が電柱に激突。事故現場の手前で止まれば避けられた');
+    }
+  }
+}
+function clearPoles() { poles.forEach(E => scene.remove(E.g)); poles.length = 0; }
+
+/* ---------- 共通の衝突・物理: 動くものはすべて同じルールで衝突し、貫通しない ----------
+   車・歩行者・自転車・動物・ママチャリ・倒れる電柱は、重なったら必ず衝突として扱う。
+   速度の向きに跳ね飛ばされ(運動量)、重力で落ち、摩擦で減速する。建物の壁は貫通しない。 */
+function slowCar(c, k) { if (c.phase === 'wreck') { c.wvx *= k; c.wvz *= k; } else c.v *= k; }
+function flingAnimal(a, vx, vz) {
+  if (a.fly) return;
+  a.vx = 0; a.vz = 0; smashSound();
+  if (CANNON) launchAnimal(a, vx, vz);
+  else a.fly = { vx: vx * 0.9, vy: rnd(3, 5), vz: vz * 0.9, sp: rnd(6, 12), landed: false };
+}
+function npcCollisions() {
+  for (const c of cars) {
+    const [cvx, cvz] = carVel(c);
+    if (Math.hypot(cvx, cvz) < 1.2) {                         // 止まっている/徐行の車や事故車も、人・自転車・動物をすり抜けさせない(押し出す)
+      {
+        const out = o => { const ca = Math.cos(c.yaw), sa = Math.sin(c.yaw), dx = o.x - c.x, dz = o.z - c.z, lx = dx * ca - dz * sa, lz = -dx * sa - dz * ca;
+          if (Math.abs(lx) / c.hx >= Math.abs(lz) / c.hl) { o.x += Math.sign(lx || 1) * ca * 0.06; o.z -= Math.sign(lx || 1) * sa * 0.06; } else { o.x -= Math.sign(lz || 1) * sa * 0.06; o.z -= Math.sign(lz || 1) * ca * 0.06; } };
+        for (const p of peds) if (!p.fall && hitsCar(c, p.x, p.z, 0.3)) out(p);
+        for (const r of riders) if (!r.falling && !r.rp && hitsCar(c, r.x, r.z, 0.4)) out(r);
+        for (const a of animals) if (!a.fly && !(c.acc && c.acc.a === a) && hitsCar(c, a.x, a.z, 0.45)) out(a);
+      }
+      continue;
+    }
+    for (const p of peds) if (!p.fall && hitsCar(c, p.x, p.z, 0.3)) { knockPed(p, cvx * 0.9 + (p.x - c.x) * 1.5, cvz * 0.9); slowCar(c, 0.8); }
+    for (const r of riders) if (!r.falling && hitsCar(c, r.x, r.z, 0.4)) {
+      r.fallDir = Math.sign(r.x - c.x) || 1; r.ft = 0; r.bs = null; hitRider(r, cvx * 0.9 + (r.x - c.x) * 0.8, cvz * 0.9); slowCar(c, 0.8);
+    }
+    for (const a of animals) if (!a.fly && !(c.acc && c.acc.a === a) && hitsCar(c, a.x, a.z, 0.45)) { flingAnimal(a, cvx, cvz); slowCar(c, 0.85); }
+    for (const h of hazards) if (h.knock && hitsCar(c, h.x, h.z, 0.45)) { h.knock(cvx, cvz); slowCar(c, 0.85); }
+  }
+  for (const E of poles) {                                   // 倒れる電柱は、下にいる人・動物・車も巻き込む
+    if (!E.fall) continue;
+    for (const p of peds) if (!p.fall && poleHit(E, p.x, p.z, 0.3)) knockPed(p, -E.dir * 1.5, 0.5);
+    for (const a of animals) if (!a.fly && poleHit(E, a.x, a.z, 0.4)) flingAnimal(a, -E.dir, 0.5);
+    for (const c of cars) if (!c.poleHit && c.phase !== 'wreck' && poleHit(E, c.x, c.z, c.hl)) {
+      c.poleHit = true; const [vx, vz] = carVel(c); startWreck(c, vx * 0.2, vz * 0.2, 0.3); sfx('crumble', c.x, 0.5, c.z, 1.2);
+    }
+  }
+}
+
+/* ---------- 自転車を漕ぐ音 ---------- */
+let crank = 0, noiseBuf = null;
+function pedalUpdate(dt) {
+  if (!actx || P.speed < 0.5) return;
+  crank += dt * P.speed * 1.5;                  // 速いほどケイデンスが上がる
+  while (crank >= 0.5) { crank -= 0.5; pedalClick(); }
+}
+function pedalClick() {
+  if (!noiseBuf) { noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.05, actx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2); }
+  const s = actx.createBufferSource(); s.buffer = noiseBuf;
+  const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600 + rnd(-400, 400); bp.Q.value = 3;
+  const g = actx.createGain(); g.gain.value = Math.min(0.16, 0.05 + P.speed * 0.007);
+  s.connect(bp).connect(g).connect(actx.destination); s.start();
+  if (P.speed > 7) { const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.value = 90 + P.speed * 8; const og = actx.createGain(); og.gain.setValueAtTime(0.03, actx.currentTime); og.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.12); o.connect(og).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.13); }   // 息づかいのような漕ぎ込みの低い音
+}
+
+/* ---------- 道路交通法(自転車): 一時停止・赤信号 ---------- */
+function violationCar(i, title) {
+  const side = Math.random() < 0.5 ? -1 : 1, v = rnd(9, 12);
+  const c = addCar(P.x + side * v * (STOPD / Math.max(P.speed, 3) + rnd(0.2, 0.7)), chunkZ(i) + (side > 0 ? 2 : -2), side * Math.PI / 2, v, 'cross');
+  c.title = title;
+}
+function checkTraffic(pz0) {
+  for (const [i, g] of chunks) {
+    const type = interType(i); if (!type) continue;
+    const line = chunkZ(i) + STOPD, u = g.userData;
+    if (P.z > line + 8) { u.ok = false; u.vio = false; continue; }
+    if (P.z > line && P.speed < 0.6) { if (!u.ok) P.stops++; u.ok = true; }
+    if (pz0 > line && P.z <= line && !u.vio) {
+      u.vio = true;
+      if (type === 'plain' && !u.ok) violationCar(i, '止まれを無視して交差点に進入し、出会い頭に衝突された');
+      else if (type === 'signal' && sigState(i) === 'r') {
+        if (Math.random() < 0.7) violationCar(i, '赤信号を無視して交差点に進入し、車にはねられた');
+        else { P.near++; flashMsg('赤信号を無視…運よく車が来なかった(信号無視は違反)', '⚠️'); }
+      }
+    }
+  }
+}
+
+/* ---------- 巻き込まれ事故: 普通の車が事故を起こし、こちらに突っ込んでくる ---------- */
+function strayBike(x0, z0) {
+  const g = new THREE.Group(), b = makeRider({ dark: false }); b.rotation.y = Math.PI / 2; g.add(b);
+  let bx = x0, ph = 0;
+  addHazard({ g, z: z0, update(dt) { bx -= 5 * dt; ph += dt * 9; b.position.set(bx, 0, z0); b.userData.anim(ph); } });
+}
+/* ---------- 事故(NPCの車): 動物・野良自転車・他の車との衝突と、そこへの巻き込み ---------- */
+// 事故車: 速度と回転を持ち、摩擦で減速して停止する(停止後も路上の障害物として残る)
+function startWreck(c, vx, vz, spin) {
+  c.phase = 'wreck'; c.wvx = vx; c.wvz = vz; c.spin = spin; c.stopped = false; c.v = Math.hypot(vx, vz); c.obey = false;
+  c.acc = c.acc || { type: 'car' };
+  c.title = c.title || '事故現場に突っ込んだ車(二次事故)に巻き込まれた';
+}
+function updateWreck(c, dt) {
+  const f = Math.max(0, 1 - 1.15 * dt);
+  c.wvx *= f; c.wvz *= f; c.spin *= Math.max(0, 1 - 1.5 * dt);
+  c.x += c.wvx * dt; c.z += c.wvz * dt; c.yaw += c.spin * dt;
+  if (!crossOpen(c.z)) {                                   // 建物の壁は貫通しない(はね返って止まる)
+    const lim = 4.95 - carExt(c)[0];
+    if (c.x > lim) { c.x = lim; c.wvx *= -0.3; c.spin *= 0.5; } else if (c.x < -lim) { c.x = -lim; c.wvx *= -0.3; c.spin *= 0.5; }
+  }
+  c.v = Math.hypot(c.wvx, c.wvz);
+  if (c.v < 0.25 && !c.stopped) { c.stopped = true; c.wvx = c.wvz = c.spin = 0; c.v = 0; killEngine(c); }
+  c.g.position.set(c.x, 0, c.z); c.g.rotation.set(c.pitchS || 0, c.yaw, 0);
+}
+const carVel = c => c.phase === 'wreck' ? [c.wvx, c.wvz] : [-Math.sin(c.yaw) * c.v, -Math.cos(c.yaw) * c.v];
+const carExt = c => { const cs = Math.abs(Math.cos(c.yaw)), sn = Math.abs(Math.sin(c.yaw)); return [cs * c.hx + sn * c.hl, cs * c.hl + sn * c.hx]; };
+function accCollisions() {          // 車同士の衝突。事故の玉突きも、事故現場に突っ込む二次事故も、車が重なったら貫通させず衝突にする
+  for (let i = 0; i < cars.length; i++) {
+    const a = cars[i];
+    for (let j = i + 1; j < cars.length; j++) {
+      const b = cars[j];
+      if (a.stopped && b.stopped) continue;
+      if (T - a.t0 < 1 || T - b.t0 < 1) continue;                            // 出現直後は判定しない
+      if (T - (a.hitT ?? -9) < 0.7 || T - (b.hitT ?? -9) < 0.7) continue;
+      if (Math.abs(a.x - b.x) > 8 || Math.abs(a.z - b.z) > 8) continue;
+      const [avx, avz] = carVel(a), [bvx, bvz] = carVel(b);
+      if (Math.hypot(avx - bvx, avz - bvz) < 1.5) continue;                  // ほぼ同じ速度(並走・停車どうし)は無視
+      if (obbOverlap(a, b, 0.15)) collideCars(a, b);
+    }
+  }
+}
+function collideCars(a, b) {
+  const [avx, avz] = carVel(a), [bvx, bvz] = carVel(b), mx = (avx + bvx) / 2, mz = (avz + bvz) / 2;
+  const kick = (c, o) => { const dx = c.x - o.x, dz = c.z - o.z, d = Math.hypot(dx, dz) || 1; startWreck(c, mx + dx / d * 1.6, mz + dz / d * 1.6, (Math.random() < 0.5 ? -1 : 1) * rnd(1.2, 3)); c.hitT = T; };
+  kick(a, b); kick(b, a);
+  smashSound(); sfx('crumble', a.x, 0.5, a.z, 1.3); sfx('skid', a.x, 0.5, a.z, 1.1);
+}
+function hitAnimal(c, a) {          // NPCの車が動物/自転車をはねる → 動物は宙を舞い、車は制御を失って横滑りしてくる
+  flingAnimal(a, -rnd(3, 6) * (c.v / 13), c.v * 0.9);
+  const side = Math.random() < 0.7 ? -1 : 1;
+  startWreck(c, side * rnd(2.5, 5.0), c.v * 0.75, side * rnd(1.4, 2.6));
+  c.title = `前方の車が${a.name || (a.deer ? 'シカ' : 'イノシシ')}と衝突、横滑りしてきた車に巻き込まれた`;
+  smashSound(); sfx('crumble', a.x, 0.5, a.z, 1.3); sfx('skid', c.x, 0.5, c.z, 1.2); sfx(a.bike ? 'bell' : a.deer ? 'cry' : 'growl', a.x, 1, a.z, 1.0);
+  warnHint('前方で衝突音と急ブレーキ音');
+}
+function pileFollower(lead) {       // 後続車が事故車に追突する(玉突き)
+  const f = addCar(lead.x, lead.z - 24, Math.PI, 14, 'acc'); f.acc = { type: 'car' }; f.title = '前方の事故に続く玉突き事故に巻き込まれた';
+}
+function accAnimal(isBike) {
+  const t1 = 30 / Math.max(P.speed, 3.5), zm = P.z - 30 - P.speed * t1;      // こちらが事故現場の30m手前に来る頃に衝突させる
+  let a, trig, vdash;
+  if (isBike) {
+    const g = makeMama({ lit: false, umbrella: Math.random() < 0.3 }); g.rotation.y = Math.PI / 2; g.position.set(4.6, 0.16, zm); scene.add(g);
+    a = { g, deer: false, name: '野良自転車', bike: true, side: 1, x: 4.6, z: zm, v: 4.5, vx: 0, vz: 0, jit: 0, eyes: [], cued: true, manual: true, head: false, hitTitle: '' };
+    animals.push(a); trig = 10.6; vdash = 4.5;
+  } else {
+    addAnimal({ side: 1, x: 4.6, z: zm }); a = animals[animals.length - 1]; a.manual = true; a.cued = true; trig = 6.1; vdash = 9;
+  }
+  const c = addCar(LANE, zm - 13 * t1, Math.PI, 13, 'acc');
+  c.acc = { type: 'animal', a, trig, vdash }; c.title = '前方の事故に巻き込まれた';
+  if (Math.random() < 0.45) pileFollower(c);
+}
+function accCarCar() {              // 交差点で一時停止無視の車が、直進車に衝突
+  const it = findInter('plain', 55, 110) || findInter('signal', 55, 110); if (!it) return false;
+  const t1 = (it.d - 30) / Math.max(P.speed, 3.5); if (t1 > 11) return false;
+  const side = Math.random() < 0.5 ? -1 : 1, zB = it.cz + (side > 0 ? 2 : -2);
+  const B = addCar(LANE + side * 11 * t1, zB, side * Math.PI / 2, 11, 'acc');
+  const A = addCar(LANE, zB - 1 - 13 * t1, Math.PI, 13, 'acc');
+  A.acc = { type: 'car' }; B.acc = { type: 'car' };
+  A.title = B.title = '前方の交差点で車同士が衝突、はじかれた車に巻き込まれた';
+  if (Math.random() < 0.45) pileFollower(A);
+  return true;
+}
+function accPit() {                 // 対向車線の路面に穴が空いていて、対向車がはまる → 横滑り・横転して車線をふさぎ、後続車が追突する
+  const t1 = 30 / Math.max(P.speed, 3.5), zm = P.z - 30 - P.speed * t1, w = rnd(1.5, 1.9), l = rnd(2.0, 2.8), g = new THREE.Group();
+  box(curbMat, w + 0.3, 0.02, l + 0.3, LANE, 0.012, zm, g); box(holeMat, w, 0.03, l, LANE, 0.022, zm, g);
+  addCone(g, LANE - 1.1, zm + l / 2 + 0.6); addCone(g, LANE + 1.1, zm + l / 2 + 0.6);
+  addHazard({ g, z: zm, update() {} });
+  const c = addCar(LANE, zm - 13 * t1, Math.PI, 13, 'acc');
+  c.acc = { type: 'pit', z: zm, hl: l / 2 }; c.title = '前方の車が路面の穴にはまって横滑りし、巻き込まれた';
+  if (Math.random() < 0.6) pileFollower(c);
+}
+function hitPit(c) {
+  c.acc.done = true;
+  startWreck(c, -rnd(3, 6), c.v * 0.45, (Math.random() < 0.5 ? -1 : 1) * rnd(1.2, 2.6));
+  c.pitchS = 0.22;                                                       // 前輪が落ちて、つんのめる
+  smashSound(); sfx('crumble', c.x, 0.5, c.z, 1.4); sfx('skid', c.x, 0.5, c.z, 1.2); shakeAmp = Math.max(shakeAmp, 0.02);
+  warnHint('前方で衝突音…車が路面の穴にはまった!');
+}
+function spawnAccident() {
+  const k = Math.random();
+  if (k < 0.28) accAnimal(false); else if (k < 0.43) accAnimal(true); else if (k < 0.65) accPit(); else if (!accCarCar()) accAnimal(false);
+}
+const spawnChain = spawnAccident;
+function spawnBoarFront() {         // イノシシが暗闇から突然、正面に突進してくる
+  addAnimal({ deer: false, x: clamp(P.x + rnd(-0.6, 0.6), -4.0, 0.5), z: P.z - 55, vz: 9 + rnd(0, 2), head: true, side: 1, hitTitle: 'イノシシが暗闇から正面に突進してきて激突した' });
+  const a = animals[animals.length - 1]; a.manual = true; a.cued = true; a.v = 2;     // v: こちらへ追尾する横方向の速さ
+  sfx('growl', a.x, 1, a.z, 1.2); warnHint('暗がりに光る目…獣の唸り声が正面から');
+}
+
+function bikeDirector(dt, diff) {
+  hazT -= dt; if (hazT <= 0) { hazT = rnd(5, 10) * (P.sigT > 0 ? 1.15 : 1) * EK(); spawnHazard(); }
+  // 停止中(信号待ちなど)にも暴走車は来る
+  if (P.speed < 0.3) { P.stopT += dt; if (P.stopT > 2 && !P.stopUsed) { P.stopUsed = true; if (Math.random() < 0.35) spawnReckless(60, true); } }
+  else if (P.speed > 3) { P.stopT = 0; P.stopUsed = false; }
+  // 右側通行(逆走)で後続車を避ける抜け道を塞ぐ: 対向車線を走っていると、対向車が次々に突っ込んでくる
+  if (P.x > -0.8) { P.rightT += dt; if (P.rightT > 1.0 && cars.filter(c => c.kind === 'oncoming').length < 3) { P.rightT = 0; spawnOncoming(); } }
+  else P.rightT = Math.max(0, P.rightT - dt);
+  if (P.sw) {   // 歩道を走っている間だけ: 植木鉢・歩行者・立て看板・歩道の穴
+    potT -= dt; if (potT <= 0) { potT = rnd(11, 19) * EK(); if (!nearInterZ(P.z - Math.max(P.speed, 1) * 1.6 - 2, 16) && !nearInterZ(P.z, 12)) spawnPot(); }      // 十字路(交差点)の歩道側には植木鉢を落とさない
+    swT -= dt; if (swT <= 0) { swT = rnd(4, 7) * EK(); spawnSwHazard(); }
+  }
+  dirT -= dt; if (dirT > 0) return;
+  dirT = (5.5 - 3.5 * diff) * EK() * rnd(0.7, 1.3) * (P.course === 'free' ? Math.max(0.55, 1 - Math.max(0, P.dist - 600) / 3000) : 1);   // フリーランは進むほど過酷に
+  if (cars.length > 9) return;
+  if (P.sigT > 0 && Math.random() < 0.25) return;                       // 手信号の直後は、事故につながるイベントが少し減る
+  const r = Math.random();
+  if (r < 0.18) spawnCross() || spawnBehind();
+  else if (r < 0.33) spawnBehind();
+  else if (r < 0.4) spawnTailgater() || spawnBehind();
+  else if (r < 0.47) spawnReckless();
+  else if (r < 0.5) spawnOncoming();
+  else if (r < 0.55) spawnTurnCar(Math.random() < 0.5 ? 'lturn' : 'rturn') || spawnBehind();
+  else if (r < 0.64) spawnAccident();
+  else if (r < 0.7) spawnPoleCrash(Math.random() < 0.5 ? 1 : -1);
+  else if (r < 0.78) spawnTruckTurn() || spawnBehind();
+  else if (r < 0.88) spawnPedCross();
+  else if (r < 0.94) spawnBoarFront();
+  else addAnimal();
+}
+
+/* =====================================================================
+   ドライバーモード: 自転車のシナリオ
+   ===================================================================== */
+const riders = [];
+function addRider(x, z, opt = {}) {
+  const g = opt.mama ? makeMama(opt) : makeRider(opt); g.position.set(x, 0, z); scene.add(g);
+  const r = { g, x, z, vx: 0, vz: 0, yaw: 0, fall: 0, fallDir: 1, falling: false, ph: Math.random() * 6, scn: opt.scn || null, passed: false, title: '', sub: '', update: null };
+  riders.push(r); return r;
+}
+function clearRiders() { riders.forEach(r => scene.remove(r.g)); riders.length = 0; }
+let scnT = 5, ambT = 3;
+const front = () => P.z - 2.2;          // 自車の前端
+const SCN = {
+  // 並走中の単独転倒
+  slipfall() {
+    const r = addRider(-3.0, P.z - 55, { dark: true, scn: 'slipfall' }); r.vz = -5;
+    r.title = '並走中の自転車が単独転倒し、車体の側面・後輪直前に倒れ込んだ';
+    r.sub = '段差や溝蓋でスリップ。真横での転倒は予測も回避もできない';
+    r.update = () => {
+      if (!r.falling && front() < r.z - 0.6 && P.z + 1.6 > r.z && Math.abs(P.x - r.x) < 2.6) { r.fallDir = P.speed > SAFE_V ? 1 : -1; r.ft = 0; r.bs = null; hitRider(r, 2.6 * r.fallDir, -3); }   // 徐行なら、相手は車から離れる方へ倒れる
+    };
+  },
+  // 後方確認なしの急な斜め横断
+  diagonal() {
+    const r = addRider(-3.0, P.z - 55, { dark: true, scn: 'diagonal' }); r.vz = -5;
+    r.title = '左端の自転車が、合図も後方確認もなく車の直前を斜めに横切った';
+    r.sub = '直前での進路変更。制動距離が足りない';
+    r.update = () => {
+      const gap = front() - r.z, rel = P.speed - 5;
+      if (!r.cut && gap > 0 && P.speed > SAFE_V && rel > 0.5 && gap < Math.max(2.5, rel * 0.55)) { r.cut = true; r.vx = 3.8; r.vz = -4.2; }
+      if (r.cut && r.x > 2.9) { r.vx = 0; r.vz = -5; }
+    };
+  },
+  // 普通に走っている自転車(ライト・反射材あり)
+  normal() {
+    const r = addRider(-3.0, P.z - 55, { dark: false, light: true, scn: 'normal' }); r.vz = -5;
+    r.title = '前方の自転車に接触した'; r.sub = '正常に走行していた自転車。これは運転者の過失';
+  },
+  // 夜間・無灯火・黒服での逆走
+  wrongway() {
+    const mama = Math.random() < 0.6;
+    const r = addRider(-2.5, P.z - 80, { dark: true, scn: 'wrongway', mama, umbrella: mama && Math.random() < 0.5 }); r.vz = mama ? 4 : 5;
+    r.title = mama ? '無灯火のママチャリが逆走し、目前に現れた' : '無灯火・黒服の自転車が逆走し、目前に現れた';
+    r.sub = 'ライトに浮かぶのは十数メートル手前。相対速度が大きく止まれない';
+    r.update = () => {
+      const fast = P.speed > SAFE_V;                                          // 徐行なら相手が気付いて左端へ避ける
+      if (!r.sw && r.z > P.z - 17) { r.sw = true; r.vx = fast ? 1.7 : -1.2; }
+      if (r.sw && (fast ? r.x > -1.7 : r.x < -3.3)) r.vx = 0;
+      if (!r.go && front() - r.z < -6) r.passed = true;
+    };
+  },
+  // 停車中の大型車の陰からの飛び出し
+  blindTruck() {
+    let z0 = P.z - 62;
+    const near = Math.round(-z0 / CL); if (interType(near) && Math.abs(z0 - chunkZ(near)) < 16) z0 -= 22;
+    addCar(-4.0, z0, 0, 0, 'parked', { type: 'truck', dark: true });
+    const r = addRider(-4.75, z0 - 5.0, { dark: true, scn: 'blind' }); r.yaw = -Math.PI / 2;
+    r.title = '停車中の大型車の陰から、一時停止無視の自転車がノーブレーキで飛び出した';
+    r.sub = '完全な死角。見えた時には数メートル手前';
+    r.update = () => {
+      const d = front() - r.z;
+      if (!r.go && P.speed > SAFE_V && d > 0 && d <= P.speed * ((P.x - 0.3 - r.x) / 5.5)) { r.go = true; r.vx = 5.5; }     // 徐行していれば飛び出さない
+      if (r.go && r.x > 5) r.passed = true;
+      if (!r.go && d < -6) r.passed = true;
+    };
+  },
+  // 塀・建物の陰(交差道路)からの飛び出し
+  blindInter(it) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const r = addRider(side * 8, it.cz + rnd(-1.2, 1.2), { dark: true, scn: 'blind' }); r.yaw = side * Math.PI / 2;
+    r.title = '塀の陰から、一時停止無視の自転車が数メートル手前に飛び出した';
+    r.sub = '見通しのない交差点。徐行していても間に合わない距離';
+    r.update = () => {
+      const d = front() - r.z;
+      if (!r.go && P.speed > SAFE_V && d > 0 && d <= P.speed * (Math.abs(P.x - r.x) / 6)) { r.go = true; r.vx = -side * 6; }
+      if (r.go && Math.abs(r.x) > 9 && Math.sign(r.x) !== side) r.passed = true;
+      if (!r.go && d < -6) r.passed = true;
+    };
+  },
+  // 死角からの赤信号無視
+  redrun(it) {
+    const c = addCar(1.0, it.cz - 0.6, Math.PI - 0.22, 0, 'rtwait');     // 右折待ちの対向車
+    c.blink = []; for (const [bx, bz] of [[-0.8, -2.2], [-0.8, 2.2]]) { const s = glow(0xff9a10, 0.9); s.position.set(bx, 0.72, bz); c.g.add(s); c.blink.push(s); }
+    const r = addRider(9.5, it.cz - 3.5, { dark: true, scn: 'redrun' }); r.yaw = Math.PI / 2;
+    r.title = '青信号で直進中、右折待ち車両の陰から赤信号無視の自転車が突入した';
+    r.sub = '対向車の陰で見えず、減速せずに交差点へ進入してきた';
+    r.update = () => {
+      const d = front() - r.z;
+      if (!r.go && d > 0 && P.speed > SAFE_V && sigState(it.i) === 'g' && d <= P.speed * ((r.x - P.x) / 7)) { r.go = true; r.vx = -7; }
+      if (r.go && r.x < -6) r.passed = true;
+      if (!r.go && d < -3) r.passed = true;
+    };
+  },
+  // 完全停止中の車への一方的な衝突
+  stopped() {
+    const r = addRider(-2.95, P.z - 30, { dark: false, phone: true, scn: 'stopped' }); r.vz = 4.5;
+    r.title = '完全停止中の車に、ながらスマホの自転車が一方的に衝突した';
+    r.sub = '停止していても、クラクション(E)か発進して動けば避けられた';
+    r.update = () => { r.vx = P.speed > 1.5 ? 0 : clamp((P.x - 0.55) - r.x, -1.2, 1.2); };     // 車が動き出せば、相手はそのまま脇を通り過ぎる
+  },
+  // 居眠り運転の車が歩道に逸脱して電柱に激突 → 電柱が倒れてくる
+  poleCrash() { spawnPoleCrash(Math.random() < 0.5 ? 1 : -1); },
+  // イノシシが暗闇から突然、正面に突進してくる
+  boarFront() {
+    addAnimal({ deer: false, x: -1.0 + rnd(-0.8, 0.8), z: P.z - 38, vz: 8, head: true, side: 1, hitTitle: 'イノシシが暗闇から突然、正面に飛び出してきた' });
+    const a = animals[animals.length - 1]; a.manual = true; a.cued = true; a.scn = true; a.v = 0; a.sub = '時速30km超だと衝突まで約1.5秒。徐行(30km/h以下)していれば避けられた';
+  },
+  // 歩きスマホの歩行者が、歩道から車道へ突然横断
+  pedPhone() {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const p = addPed(side * 4.1, P.z - 55, { dark: false, phone: true, scn: true });
+    p.title = '歩きスマホの歩行者が、車道に飛び出した'; p.sub = '画面を見たまま横断。ライトに照らされるのは直前';
+    p.update = () => {
+      const d = front() - p.z;
+      if (!p.go && P.speed > SAFE_V && d > 0 && d <= P.speed * (Math.abs(P.x - p.x) / p.v)) { p.go = true; p.vx = -side * p.v; }
+      if (p.go && Math.abs(p.x) > 4.3 && Math.sign(p.x) !== side) p.passed = true;
+      if (!p.go && d < -6) p.passed = true;
+    };
+  },
+  // 停車中の大型車の陰から歩行者が走って横断
+  pedBlind() {
+    let z0 = P.z - 62;
+    const near = Math.round(-z0 / CL); if (interType(near) && Math.abs(z0 - chunkZ(near)) < 16) z0 -= 22;
+    addCar(-4.0, z0, 0, 0, 'parked', { type: 'truck', dark: true });
+    const p = addPed(-4.75, z0 - 5.0, { dark: true, scn: true }); p.v = 2.4;
+    p.title = '停車中の大型車の陰から、歩行者が車道へ飛び出した'; p.sub = '完全な死角。走って横断してきた';
+    p.update = () => {
+      const d = front() - p.z;
+      if (!p.go && P.speed > SAFE_V && d > 0 && d <= P.speed * ((P.x - 0.3 - p.x) / p.v)) { p.go = true; p.vx = p.v; }
+      if (p.go && p.x > 5) p.passed = true;
+      if (!p.go && d < -6) p.passed = true;
+    };
+  },
+};
+function driveDirector(dt) {
+  ambT -= dt;
+  if (ambT <= 0) { ambT = rnd(4, 9); if (cars.length < 8 && !riders.some(r => r.scn === 'redrun' && !r.passed)) spawnOncoming(); }
+  // 信号待ちなどで完全停止していると…
+  if (P.speed < 0.2) {
+    P.stopT += dt;
+    if (P.stopT > 1.5 && !P.stopUsed) { P.stopUsed = true; if (Math.random() < 0.6 && !riders.some(r => r.scn && !r.passed)) SCN.stopped(); }
+  } else if (P.speed > 3) { P.stopT = 0; P.stopUsed = false; }
+  if (riders.some(r => r.scn && !r.passed) || peds.some(p => p.scn && !p.passed) || animals.some(a => a.scn && !a.passed)) return;
+  scnT -= dt; if (scnT > 0) return; scnT = rnd(2.5, 5) * EK();
+  const opts = ['slipfall', 'diagonal', 'normal', 'wrongway', 'blindTruck', 'pedPhone', 'pedBlind', 'boarFront', 'poleCrash'];
+  const ip = findInter('plain', 60, 130), is = findInter('signal', 60, 140);
+  if (ip) opts.push('blindInter', 'blindInter');
+  if (is) { const p = (T + is.d / Math.max(P.speed, 6) + is.i * 5) % 24; if (p > 1 && p < 9.5) opts.push('redrun', 'redrun', 'redrun'); }
+  const k = pick(opts);
+  SCN[k](k === 'blindInter' ? ip : is);
+}
+
+/* =====================================================================
+   入力
+   ===================================================================== */
+const keys = {}; let pBike = false, pDrive = false, vPress = false, bPress = false, lastYaw = 0, prevStickClick = false, prevSnap = false;
+addEventListener('keydown', e => {
+  const tg = e.target && e.target.tagName;
+  if (tg === 'INPUT') { if (e.code === 'Enter') { e.target.blur(); pBike = true; } return; }   // 名前入力中はゲーム操作を無効化
+  if (tg === 'BUTTON') e.target.blur();          // ボタンにフォーカスが残っていると、キー操作が効かず「視点だけ動く」状態になっていた
+  keys[e.code] = true; initAudio();
+  if (e.code === 'Space') e.preventDefault();
+  if (e.repeat) return;
+  if (e.code === 'KeyL' && P.state === 'replay') toggleBright();
+  if (e.code === 'KeyE') ringBell();
+  if (e.code === 'KeyX') toggleWalk();
+  if (e.code === 'KeyV') vPress = true;
+  if (e.code === 'KeyB') bPress = true;
+  if (e.code === 'Enter' || e.code === 'Digit1') pBike = true;
+  if (e.code === 'Digit2') pDrive = true;
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('pointerdown', () => initAudio());      // メニューのボタンをクリックした場合も音を有効化
+let drag = null, yaw = 0, pitch = 0, lookOff = 0, lookBack = false;
+renderer.domElement.addEventListener('pointerdown', e => { initAudio(); drag = { x: e.clientX, y: e.clientY, moved: false }; });
+addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+  if (P.state === 'replay') lookOff -= dx * 0.004; else yaw -= dx * 0.004;
+  pitch = clamp(pitch - dy * 0.004, -1.2, 1.2);
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+addEventListener('pointerup', () => { drag = null; });
+addEventListener('pointercancel', () => { drag = null; });
+addEventListener('blur', () => { drag = null; for (const k in keys) keys[k] = false; });          // ウィンドウを離れた時に、押しっぱなし扱いのキーを解除
+document.addEventListener('visibilitychange', () => { if (document.hidden) { drag = null; for (const k in keys) keys[k] = false; } });
+function readInput() {
+  const r = { steer: 0, boost: false, brake: false, startBike: pBike, startDrive: pDrive, toggle: vPress, look: bPress };
+  pBike = pDrive = vPress = bPress = false;
+  r.steer = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+  r.boost = !!(keys.KeyW || keys.ArrowUp);
+  r.brake = !!(keys.KeyS || keys.ArrowDown || keys.Space);
+  return r;
+}
+
+/* =====================================================================
+   ゲーム進行
+   ===================================================================== */
+let view = 'bike', viewCar = null;
+const selfRider = makeRider({ dark: true }); selfRider.visible = false; scene.add(selfRider);
+let selfSig = '', selfWalk = false;
+const selfFall = { g: selfRider, fallDir: 1, ft: 0, bs: null };        // 自分の転倒モーション(後続車視点・リプレイで見える)
+function setBikeView() { view = 'bike'; viewCar = null; }
+function toggleView() {
+  if (view === 'car') { setBikeView(); return; }
+  if (P.mode !== 'bike' || P.state !== 'play') return;
+  viewCar = cars.find(c => c.kind === 'behind' && c.z > P.z + 10) || spawnBehind(40); view = 'car';
+}
+/* ---------- 360度リプレイ ---------- */
+const REC_SEC = 2.2;                  // 死亡の1.5秒前〜死亡後0.7秒だけを再生する
+const rec = [];                       // 直近の各フレームの {t, list, d}
+const hint = { visible: false };
+function setHint() {}
+const RP = { on: false, rt: 0, t0: 0, t1: 0, theta: 0.6, cx: 0, cz: 0, objs: new Set(), added: new Set(), headLocal: 0, yawFace: 0 };
+function recordFrame() {
+  const list = [], add = o => { if (o && o.parent) list.push(o); };
+  for (const c of cars) { add(c.g); if (c.door) add(c.door); }
+  for (const r of riders) { add(r.g); add(r.g.userData.bikeG); add(r.g.userData.bodyG); }
+  if (P.mode === 'bike') { add(selfRider.userData.bikeG); add(selfRider.userData.bodyG); }
+  for (const a of animals) add(a.g);
+  for (const p of peds) add(p.g);
+  for (const E of poles) add(E.g);
+  if (selfPhys) for (const r of selfRecs) add(r.obj);
+  for (const h of hazards) for (const ch of h.g.children) add(ch);
+  add(P.mode === 'bike' ? selfRider : myCar);
+  const d = new Float32Array(list.length * 7);
+  list.forEach((o, i) => { const k = i * 7; d[k] = o.position.x; d[k + 1] = o.position.y; d[k + 2] = o.position.z; d[k + 3] = o.quaternion.x; d[k + 4] = o.quaternion.y; d[k + 5] = o.quaternion.z; d[k + 6] = o.quaternion.w; });
+  rec.push({ t: T, list, d });
+  while (rec.length && T - rec[0].t > REC_SEC) rec.shift();
+}
+function placeReplayView() {
+  const sx = RP.cx + 6 * Math.sin(RP.theta), sz = RP.cz + 6 * Math.cos(RP.theta);
+  rig.position.set(sx, 0, sz);
+  RP.yawFace = Math.atan2(-(RP.cx - sx), -(RP.cz - sz));
+  rig.rotation.set(0, 0, 0);
+}
+function enterReplay() {
+  if (rec.length < 5) { P.state = 'replay'; return; }
+  P.state = 'replay'; RP.on = true;
+  RP.t0 = rec[0].t; RP.t1 = rec[rec.length - 1].t; RP.rt = RP.t0;
+  RP.objs.clear(); RP.added.clear(); rec.forEach(f => f.list.forEach(o => RP.objs.add(o)));
+  RP.cx = P.x; RP.cz = P.z; RP.theta = 0.6;
+  setBikeView(); bars.visible = false; flash.material.opacity = 0;
+  rig.rotation.set(0, 0, 0); rig.updateMatrixWorld(true);
+  pitch = -0.12; lookOff = 0; camera.position.y = 1.6;
+  placeReplayView(); applyBright(replayBright);
+  if (actx && actx.state === 'running') actx.suspend();
+}
+function exitReplay() {
+  if (!RP.on) return;
+  applyBright(0);
+  for (const o of RP.added) scene.remove(o);
+  RP.on = false; RP.added.clear(); RP.objs.clear(); lookOff = 0; camera.position.y = 1.5;
+}
+function replayTick(dt, inp) {
+  if (!RP.on) return;
+  RP.rt += dt * 0.6; if (RP.rt > RP.t1 + 0.8) RP.rt = RP.t0;
+  let lo = 0, hi = rec.length - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (rec[m].t <= RP.rt) lo = m; else hi = m - 1; }
+  const f = rec[lo];
+  for (const o of RP.objs) o.visible = false;
+  for (let i = 0; i < f.list.length; i++) {
+    const o = f.list[i], k = i * 7;
+    if (!o.parent) { scene.add(o); RP.added.add(o); }
+    o.visible = true; o.position.set(f.d[k], f.d[k + 1], f.d[k + 2]); o.quaternion.set(f.d[k + 3], f.d[k + 4], f.d[k + 5], f.d[k + 6]);
+  }
+  RP.theta += dt * (0.12 + 0.9 * ((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0))); placeReplayView();
+}
+function startGame(mode, crs = course) {
+  physClearAll(); setBikeView(); clearCars(); clearAnimals(); clearHazards(); clearRiders(); clearPeds(); clearPoles(); usedInter.clear();
+  resetRiderPose(selfRider); selfFall.ft = 0; selfFall.bs = null;
+  exitReplay(); rec.length = 0; lookBack = false; yaw = 0; pitch = 0; if (actx && actx.state === 'suspended') actx.resume();
+  runDone = false; runId++; countEl.style.display = 'none';
+  LS.set('nlr_name', nameEl.value.trim().slice(0, 12));
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  Object.assign(P, { wobT: 0, wobDir: 1, signal: '', sigT: 0, fallStyle: '', laneT: 5, laneBack: 0, laneMsg: false, rightT: 0, mode, course: crs, state: 'ready', x: mode === 'drive' ? -LANE : -2.8, z: 0, speed: 0, psi: 0, dist: 0, near: 0, deadT: 0, fallT: 0, stopT: 0, stopUsed: false, lineI: 0, lineS: 99, time: 0, maxV: 0, stops: 0, readyT: 2.4, goT: 0, goalT: 0 });
+  const h0 = camera.position.y > 0.3 ? camera.position.y : 1.5;       // 立ち/座りに合わせて目の高さを校正
+  rigYBike = 1.55 - h0; rigYCar = 1.25 - h0;
+  bars.position.set(0, 1.0 - rigYBike, -0.45); sigG.position.set(0, 1.0 - rigYBike, -0.4);
+  myCar.visible = mode === 'drive';
+  setWeather(pickWeather()); debrisT = rnd(15, 25); setPause(false);
+  if (W !== WEATHERS.clear) setTimeout(() => flashMsg(`天候: ${W.name}(路面: ${W.surf})`, '🌧'), 800);
+  P.slide = 0; P.slideWarn = false; P.demo = false; demoBadge.style.display = 'none'; glareK = 0;
+  P.sw = false; P.walk = false; P.revT = 0; potT = 12; swT = 3; shakeAmp = 0;
+  flash.material.opacity = 0; dirT = 4; hazT = 6; scnT = 4; ambT = 2;
+  panelKey = '';
+}
+
+/* ---------- 車の更新 ---------- */
+function updateTruck(c, dt) {
+  if (c.phase === 'follow') {
+    c.followT += dt;
+    c.v = clamp(P.speed + 1.5 * (c.z - (P.z - 12.0)), 0, 17);       // 自転車の12m前を走る。左折の合図で減速するので、追い越さずブレーキで待てば安全
+    if (c.z < c.cz + 24 || c.followT > 12) { c.phase = 'commit'; c.v = Math.max(c.v, 4.5); }
+  } else if (c.phase === 'commit') {
+    if (c.z <= c.cz + 5.5) { c.phase = 'turn'; c.th = 0; c.ax = c.x - 4.5; c.az = c.z; c.v = Math.max(4, Math.min(c.v, 6)); }
+  } else if (c.phase === 'turn') {
+    c.th += c.v / 4.5 * dt;
+    if (c.th >= Math.PI / 2) { c.th = Math.PI / 2; c.phase = 'away'; c.v = 6; }
+    c.x = c.ax + 4.5 * Math.cos(c.th); c.z = c.az - 4.5 * Math.sin(c.th); c.yaw = c.th;
+    return true;
+  }
+  return false;
+}
+// NPCの車の障害物回避: 前方の歩行者・自転車・動物・止まっている車/前の車に突っ込まないよう、手前で止まる。
+// 戻り値は「この障害物の手前で止まれる最大速度」(障害物が無ければ Infinity)。
+// 事故イベントの車(c.acc)は、事故のために動物と他の車は避けない(人と自転車だけは避ける)。
+function avoidLimit(c) {
+  const fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw), look = c.v * c.v / 16 + 10, people = !!c.acc;
+  let best = Infinity;
+  const test = (ox, oz, half, len) => {              // half: 障害物の横の半幅 / len: 進行方向の半長
+    const dx = ox - c.x, dz = oz - c.z, along = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
+    if (lat > c.hx + half + 0.35) return;
+    const gap = along - c.hl - len;
+    if (gap < -2 || gap > look) return;              // すでに通過した / まだ遠い
+    const v = Math.sqrt(2 * 9 * Math.max(gap - 1.2, 0));
+    if (v < best) best = v;
+  };
+  const testMoving = (o, half, len) => {              // 動いている相手は、数秒先までの軌道を先読みする
+    const ovx = o.vx || 0, ovz = o.vz || 0;
+    const gap0 = (o.x - c.x) * fx + (o.z - c.z) * fz - c.hl - len;
+    if (gap0 < -2) return;
+    for (let t = 0; t <= 3.6; t += 0.3) {
+      const dx = o.x + ovx * t - (c.x + fx * c.v * t), dz = o.z + ovz * t - (c.z + fz * c.v * t);
+      const along = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx);
+      if (lat < c.hx + half + 0.35 && along - c.hl - len < 1.2 && along > -(c.hl + len + 1)) {
+        const v = Math.sqrt(2 * 9 * Math.max(gap0 - 1.2, 0)); if (v < best) best = v; return;
+      }
+    }
+  };
+  for (const p of peds) testMoving(p, 0.35, 0.35);
+  for (const r of riders) testMoving(r, 0.4, 0.8);
+  for (const h of hazards) if (h.bell) test(h.x, h.z, 0.4, 0.8);          // ママチャリ
+  if (people) { c.limP = best; return best; }
+  for (const a of animals) if (!a.fly) testMoving(a, 0.4, 0.8);
+  c.limP = best;                                    // 人・動物に対する制動は強く(貫通させない)。車や障害物に対する制動は通常の強さ
+  const alongZ = Math.abs(fz) > Math.abs(fx);
+  c.blk = null; let blkGap = 1e9;
+  for (const o of cars) {
+    if (o === c) continue;
+    const same = fx * -Math.sin(o.yaw) + fz * -Math.cos(o.yaw) > 0.7, still = o.phase === 'wreck' || o.v < 0.5;
+    if (!same && !still && c.detourX == null) continue;      // 交差・対向車は避けない(すれ違う/デッドロック防止)。迂回中だけ対向車も見る
+    const [ex, ez] = carExt(o), half = alongZ ? ex : ez, len = alongZ ? ez : ex;
+    test(o.x, o.z, half, len);
+    if (still) {                                             // 前方の静止車(事故車・駐車車両)を記録 → 迂回の判断に使う
+      const dx = o.x - c.x, dz = o.z - c.z, along = dx * fx + dz * fz, lat = Math.abs(dx * fz - dz * fx), gap = along - c.hl - len;
+      if (lat < c.hx + half + 0.35 && gap > -2 && gap < 32 && gap < blkGap) { blkGap = gap; c.blk = o; }
+    }
+  }
+  for (const E of poles) if (E.fall) test(c.x, E.z, 9, 0.3);   // 倒れた電柱
+  return best;
+}
+function updateCar(c, dt) {
+  if (c.phase === 'wreck') { updateWreck(c, dt); return; }
+  const bikePlay = P.mode === 'bike' && P.state === 'play';
+  let vt = c.vc, scripted = false;
+  if (c.kind === 'rturn' || (c.lturn && c.z < P.z - 2)) vt = turnStep(c, dt);
+  if (c.kind === 'truck') { scripted = updateTruck(c, dt); vt = c.v; }
+  if (c.kind === 'truck' && bikePlay && (c.phase === 'commit' || c.phase === 'turn')) {      // 大型車の左折警報音
+    c.beepT = (c.beepT || 0) - dt;
+    if (c.beepT <= 0) { c.beepT = 0.55; sfx('beep', c.x, 1.5, c.z, 0.5); if (!c.hinted) { c.hinted = true; warnHint('前の大型車が左折警報(ピーピー)…追い越さずブレーキで待つ'); } }
+  }
+  else if (c.kind === 'parked' || c.kind === 'rtwait') vt = 0;
+  if (c.blink) { const on = (T * 1.4) % 1 < 0.5; c.blink.forEach(s => s.visible = on); }
+  if (c.obey) {
+    const dir = Math.abs(c.yaw) < 1 ? -1 : 1, s = nextSignal(c.z + dir * c.hl, dir);
+    if (s && s.s < 60 && s.s >= 0) { const st = sigState(s.i); if (st === 'r' || (st === 'y' && s.s > 8)) vt = Math.min(vt, Math.sqrt(8 * Math.max(s.s - 0.6, 0))); }
+  }
+  const lim = avoidLimit(c);
+  if (lim < vt) vt = lim;
+  if (lim < c.v - 3 && !c.hornedPed && c.snd) { c.hornedPed = true; horn(c); }          // 急ブレーキとクラクション
+  if (c.seekDown && P.state === 'down') c.x += clamp(P.x - c.x, -3 * dt, 3 * dt);      // 倒れた自転車に向かって走ってくる後続車
+  if (c.kind === 'behind' && !c.acc) {                    // 事故車や路上の障害物は、反対車線が空いていれば迂回する(空いていなければ手前で止まる)
+    if (c.blk && c.detourX == null && c.v > 1) {
+      const free = !cars.some(q => q !== c && q !== c.blk && Math.abs(q.x - LANE) < 1.7 && (c.z - q.z) > -8 && (c.z - q.z) < 70);
+      if (free) c.detourX = LANE;
+    }
+    if (c.detourX != null) {
+      if (!c.blk) { c.detourT = (c.detourT || 0) + dt; if (c.detourT > 1.5) { c.detourX = null; c.detourT = 0; } } else c.detourT = 0;
+    }
+  }
+  if (c.kind === 'acc' && c.acc && c.acc.type === 'pole' && !c.acc.done) {     // 居眠り運転: 歩道へ逸脱して電柱に向かう
+    const E = c.acc.pole, rem = (E.z - c.z) * (Math.abs(c.yaw) < 1 ? -1 : 1);   // 電柱までの距離(進行方向)
+    if (rem < 26 && rem > 0) {
+      if (!c.acc.drift) { c.acc.drift = true; sfx('gravel', c.x, 0.3, c.z, 1.0); warnHint('前方の車がふらつき、歩道へ…電柱に注意'); }
+      c.x += clamp(E.x - c.x, -1.6 * dt, 1.6 * dt);
+      c.acc.rt = (c.acc.rt || 0) - dt; if (c.acc.rt <= 0) { c.acc.rt = 0.35; sfx('gravel', c.x, 0.3, c.z, 0.9); }     // 路肩のガタガタ音
+    }
+    const [pgx, pgz] = carGap(c, E.x, E.z);
+    if (pgx < 0.15 && pgz < 0.2) hitPole(c, E);
+  }
+  carPoleHits(c);
+  if (c.kind === 'acc' && c.acc && c.acc.type === 'pit' && !c.acc.done && c.z > c.acc.z - c.acc.hl - c.hl + 0.4) hitPit(c);       // 穴に前輪が入った
+  if (c.kind === 'acc' && c.acc && c.acc.type === 'animal') {      // 事故の引き金: 動物/野良自転車が車の直前に飛び出す
+    const ac = c.acc, a = ac.a;
+    if (!a.vx && !a.scared && !(a.holdUntil && T < a.holdUntil) && a.z - c.z < ac.trig) { a.vx = -ac.vdash; sfx(a.bike ? 'bell' : a.deer ? 'cry' : 'growl', a.x, 1, a.z, 1.0); }
+    if (a.vx && !a.fly) { const [gx, gz] = carGap(c, a.x, a.z); if (gx < 0.3 && gz < 0.3) hitAnimal(c, a); }
+  }
+  if (bikePlay) {
+    const ahead = (P.z - c.z) * (Math.abs(c.yaw) < 1 ? -1 : 1);
+    if (c.kind === 'behind') {
+      // 自転車に気付いたら側方間隔を取ろうとする(ただしセンターラインは越えない)
+      const see = P.sigT > 0 ? 26 : SEE;                                    // 手信号を出していると、ドライバーが早く気付く
+      if (c.aori && !c.aoriDone) {                                        // あおり運転: 車間を詰めて、パッシングとクラクションで煽る。左端へ寄ると早く諦めて追い越していく
+        if (ahead > 0 && ahead < 24 && c.aoriT == null) { c.aoriT = 11; warnHint('あおり運転!後ろの車が接近してパッシング…左端へ寄って先に行かせる'); }
+        if (c.aoriT != null) {
+          c.aoriT -= dt * (P.x < -2.9 || P.sw ? 2.5 : 1);
+          vt = Math.min(lim, clamp(P.speed + (ahead - 6) * 0.9, 0, 15));
+          c.flashPhase = (c.flashPhase || 0) + dt; const ph = c.flashPhase % 2.4; c.flashOn = ph < 0.9 && Math.floor(ph / 0.15) % 2 === 0;
+          c.hornT = (c.hornT || 0) - dt; if (c.hornT <= 0 && c.snd) { c.hornT = rnd(2.5, 4); horn(c); }
+          if (c.aoriT <= 0) { c.aoriDone = true; c.flashOn = false; }
+        }
+      }
+      let tx = c.detourX ?? c.baseX;
+      if (c.detourX == null && ahead > -5 && ahead < see) tx = clamp(P.x + 0.35 + 1.0 + 0.9, c.baseX, CAR_MAX_X);
+      if (!(c.turn && (c.turn.arc || c.turn.done))) c.x += clamp(tx - c.x, -1.8 * dt, 1.8 * dt);
+      if (P.sigT > 0 && ahead > 0 && ahead < see && c.v > P.speed + 2) vt = Math.min(vt, P.speed + 2);   // 追い越さず、速度を合わせる
+      if (!c.horned && ahead > 0 && ahead < SEE && P.x > SAFE_X && c.v > 2) { c.horned = true; horn(c); }
+    } else if (c.kind === 'reckless') {
+      {                                                                     // 迫ってくる車をじっと見ると、運転手がハッと気付いて避ける(見ていないと気付かない)
+        const dx = c.x - P.x, dz = c.z - P.z, dd = Math.hypot(dx, dz) || 1;
+        const looking = view === 'bike' && P.state === 'play' && !c.noticed && dd > 7 && dd < 50 && (-Math.sin(yaw) * dx - Math.cos(yaw) * dz) / dd > 0.8;
+        c.eye = Math.max(0, (c.eye || 0) + (looking ? dt : -dt * 0.5));
+        if (c.eye > 0.6 && !c.noticed) {
+          c.noticed = true; c.lock = false; c.locked = false; sfx('horn', c.x, 0.8, c.z, 0.9);
+          flashMsg('運転手と目が合った!ハッと気付いて避けていく', '👁');
+        }
+        if (c.noticed) { c.x += clamp(clamp(P.x + 2.2, -0.6, 0.9) - c.x, -2.2 * dt, 2.2 * dt); vt = Math.min(vt, Math.max(4, P.speed)); }
+        else if (!c.eyeHint && ahead > 0 && ahead < 45) { c.eyeHint = true; warnHint('危ない車が近づく。振り向いてじっと見る(B/ドラッグ)と気付いてもらえるかも'); }
+      }
+      if (c.noticed) {
+      } else if (c.lock) {                                                         // 止まっている自転車を狙う: 24m手前までは狙いを修正し、そこからは居眠りで進路が固定される
+        if (ahead < 30 || P.speed > 1) c.locked = true;                      // 動き出した/30m手前になったら、居眠りのまま進路が固定される
+        if (!c.locked) c.x += clamp(P.x - c.x, -1.6 * dt, 1.6 * dt);
+        if (!c.warned && ahead < 42 && ahead > 0) { c.warned = true; flashMsg('暴走車が迫っている!横へ避けて', '⚠️'); sfx('horn', c.x, 0.8, c.z, 0.8); }
+      } else {
+        c.wob = (c.wob ?? Math.random() * 6) + dt * 1.6;                    // 脇見・居眠りで蛇行する(ただし左端には寄ってこない)
+        c.x += clamp((-0.6 + 0.8 * Math.sin(c.wob)) - c.x, -1.6 * dt, 1.6 * dt);   // 走路は -1.4〜0.2。左端に寄っていれば当たらない
+      }
+    } else if (c.kind === 'oncoming') {
+      if (!c.horned && ahead > 0 && ahead < 30 && P.x > 0.4) { c.horned = true; horn(c); }
+    } else if (c.kind === 'parked' && c.doorWill) {
+      const back = P.z - c.z;
+      if (!c.clicked && back < 10 && back > 2.4) { c.clicked = true; sfx('click', c.x + 1.2, 1, c.z, 1.0); warnHint('駐車車両から「カチャッ」(ドアロック解除音)'); }
+      if (back < 2.4 && back > -1.5 && c.doorA < 1.25) c.doorA = Math.min(1.25, c.doorA + 11 * dt);
+      c.door.rotation.y = c.doorA;
+      if (c.doorA > 0.6 && Math.abs(P.z - (c.z - 0.45)) < 0.45 && P.x >= c.x + 1.25 && P.x < c.x + 2.15)
+        goDown(1, '路上駐車の横を通過する直前にドアが開き、激突して後続車に轢かれた');
+    }
+  }
+  if (!scripted) {
+    const brk = c.limP < Infinity ? 20 : lim < Infinity ? 12 : 8;                              // 人・動物の手前は急ブレーキ。車の手前は通常の制動(間に合わなければ追突する)
+    if (c.kind !== 'truck') c.v += clamp(vt - c.v, -brk * dt, 3 * dt);
+    else if (lim < c.v) c.v = Math.max(lim, c.v - brk * dt);
+    c.x -= Math.sin(c.yaw) * c.v * dt; c.z -= Math.cos(c.yaw) * c.v * dt;
+  }
+  const acc = (c.v - (c.pv ?? c.v)) / Math.max(dt, 0.001); c.pv = c.v;
+  c.pitchS = (c.pitchS || 0) + (clamp(acc * 0.0035, -0.06, 0.03) - (c.pitchS || 0)) * Math.min(1, 8 * dt);     // 急ブレーキで前のめりに沈む
+  c.g.position.set(c.x, 0, c.z); c.g.rotation.set(c.pitchS, c.yaw, 0);
+}
+// 点(自転車)が車の長方形に触れているか。角は丸く判定する(以前は角が四角く膨らんで、隙間を通っても当たり判定になっていた)
+function hitsCar(c, px, pz, r) {
+  const [gx, gz] = carGap(c, px, pz);
+  return (gx < 0 && gz < 0) || Math.hypot(Math.max(gx, 0), Math.max(gz, 0)) < r;
+}
+// 向きを持った長方形(車)どうしの重なり判定(分離軸法)。margin分だけ重なっていなければ当たりとしない
+function obbOverlap(a, b, margin = 0.08) {
+  const af = [-Math.sin(a.yaw), -Math.cos(a.yaw)], ar = [Math.cos(a.yaw), -Math.sin(a.yaw)];
+  const bf = [-Math.sin(b.yaw), -Math.cos(b.yaw)], br = [Math.cos(b.yaw), -Math.sin(b.yaw)];
+  const dx = b.x - a.x, dz = b.z - a.z;
+  for (const ax of [af, ar, bf, br]) {
+    const d = Math.abs(dx * ax[0] + dz * ax[1]);
+    const ra = a.hl * Math.abs(ax[0] * af[0] + ax[1] * af[1]) + a.hx * Math.abs(ax[0] * ar[0] + ax[1] * ar[1]);
+    const rb = b.hl * Math.abs(ax[0] * bf[0] + ax[1] * bf[1]) + b.hx * Math.abs(ax[0] * br[0] + ax[1] * br[1]);
+    if (d > ra + rb - margin) return false;
+  }
+  return true;
+}
+// 相対速度が時速8km(2.2m/s)以下の接触は「こすった」だけ。事故にならず、軽く押し戻される
+const SCRAPE_V = 8 / 3.6; let scrapeT = -9;
+function relSpeed(c) { const [cx, cz] = carVel(c); return Math.hypot(Math.sin(P.psi) * P.speed - cx, -Math.cos(P.psi) * P.speed - cz); }
+function scrapeOff(c) {
+  const lx = (P.x - c.x) / c.hx, lz = (P.z - c.z) / c.hl;
+  if (Math.abs(lx) >= Math.abs(lz)) P.x += Math.sign(lx || 1) * 0.04; else P.z += Math.sign(lz || 1) * 0.05;
+  P.speed *= 0.9;
+  if (T - scrapeT > 2.5) { scrapeT = T; flashMsg('軽く接触(時速8km以下なので無事)', '⚠️'); }
+}
+function bikeCollide(c) {
+  const [gx, gz] = carGap(c, P.x, P.z);
+  if (P.state === 'play') {
+    if (hitsCar(c, P.x, P.z, 0.28) && relSpeed(c) < SCRAPE_V) scrapeOff(c);
+    else if (hitsCar(c, P.x, P.z, 0.28)) {
+      if (c.kind === 'parked') crash(c, '無灯火の路上駐車に激突！', CAUSE_POLE);
+      else if (c.kind === 'oncoming') crash(c, P.x > -0.8 ? '右側通行(逆走)で対向車と正面衝突' : '対向車と接触', CAUSE_HIT);
+      else if (c.kind === 'reckless') crash(c, `背後から暴走車に追突された(${c.reason})`, CAUSE_HIT);
+      else if (c.kind === 'truck') crash(c, 'ウインカーなしで左折した大型車に巻き込まれた', CAUSE_RUNOVER);
+      else if (c.kind === 'stream') crash(c, '赤信号の交差点に進入し、車にはねられた', CAUSE_HIT);
+      else if (c.kind === 'chain' || c.kind === 'acc') crash(c, c.title || '事故に巻き込まれた', CAUSE_HIT);
+      else if (c.kind === 'cross') crash(c, c.title || '一時停止を無視した車に側面からはねられた', CAUSE_HIT);
+      else if (c.kind === 'rturn' || c.turn || c.aori) crash(c, c.title, CAUSE_HIT);
+      else crash(c, '車にはねられた！', CAUSE_HIT);
+    } else {
+      const gap = Math.hypot(Math.max(gx, 0), Math.max(gz, 0));
+      if (gap < c.minGap) c.minGap = gap;
+      if (!c.counted && c.minGap < 0.5 && Math.hypot(c.x - P.x, c.z - P.z) > 10) { c.counted = true; P.near++; }
+    }
+  } else if (P.state === 'down' && c.kind !== 'parked' && c.kind !== 'rtwait') {
+    if (hitsCar(c, P.x, P.z, 0.28)) crash(c, P.downTitle, CAUSE_RUNOVER);
+  }
+}
+function driveCollide(c) {
+  if (P.state === 'play' && obbOverlap({ x: P.x, z: P.z, yaw: -P.psi * 0.5, hx: 0.88, hl: 2.2 }, c, 0.12) && relSpeed(c) < SCRAPE_V) {
+    const dz = P.z - c.z, dx = P.x - c.x;                     // こすっただけ: 少し押し戻して、速度を落とす
+    if (Math.abs(dx) / (c.hx + 0.88) >= Math.abs(dz) / (c.hl + 2.2)) P.x += Math.sign(dx || 1) * 0.04; else P.z += Math.sign(dz || 1) * 0.05;
+    P.speed *= 0.9; if (T - scrapeT > 2.5) { scrapeT = T; flashMsg('軽く接触(時速8km以下なので無事)', '⚠️'); }
+    return;
+  }
+  if (obbOverlap({ x: P.x, z: P.z, yaw: -P.psi * 0.5, hx: 0.88, hl: 2.2 }, c, 0.12)) {     // 実際の車の向きに合わせた判定(隙間を通れる)
+    c.v = 0; c.vc = 0;
+    if (c.kind === 'oncoming') endDrive(P.x > -0.3 ? '対向車線に出ている時に、対向車と正面衝突した' : '対向車と接触した', '追い越しは対向車が来ていない時に、5秒以内で');
+    else if (c.kind === 'stream' || c.kind === 'cross') endDrive(c.title || '交差道路の車と衝突した', '信号無視。これは運転者の過失');
+    else endDrive(c.kind === 'rtwait' ? '右折待ちの車に衝突した' : '停車中の車に衝突した', 'これは運転者の過失');
+  }
+}
+
+/* ---------- ライトの割り当て(近い車から実ライトを当てる) ---------- */
+const spots = [0, 1].map(() => { const s = new THREE.SpotLight(0xfff1d6, 0, 60, 0.6, 0.85, 1.4); scene.add(s); scene.add(s.target); return s; });
+const lampLights = [0].map(() => { const l = new THREE.PointLight(0xffc98a, 0, 24, 1.5); scene.add(l); return l; });
+function assignLights() {
+  camera.getWorldPosition(_p);
+  const list = [];
+  if (P.mode === 'drive' && P.state !== 'title') list.push({ x: myCar.position.x, z: myCar.position.z, fx: 0, fz: -1, fl: 2.2, pow: 380, d: -1 });
+  for (const c of cars) if (c.lit) {
+    const gp = c.g.position, d = Math.hypot(gp.x - _p.x, gp.z - _p.z);
+    if (d < 90) { _u.set(0, 0, -1).applyQuaternion(c.g.quaternion); list.push({ x: gp.x, z: gp.z, fx: _u.x, fz: _u.z, fl: c.hl, pow: 330, d }); }
+  }
+  list.sort((a, b) => a.d - b.d);
+  spots.forEach((s, i) => {
+    const o = list[i]; if (!o) { s.intensity = 0; return; }
+    const fx = o.fx, fz = o.fz;
+    s.intensity = o.pow; s.position.set(o.x + fx * o.fl, 0.8, o.z + fz * o.fl);
+    s.target.position.set(o.x + fx * (o.fl + 24), 0, o.z + fz * (o.fl + 24));
+  });
+  const lamps = [];
+  for (const g of chunks.values()) if (g.userData.lamp) lamps.push(g.userData.lamp);
+  lamps.sort((a, b) => Math.abs(a.z - (P.z - 10)) - Math.abs(b.z - (P.z - 10)));
+  lampLights.forEach((L, i) => { const l = lamps[i]; if (!l) { L.intensity = 0; return; } L.intensity = 55; L.position.set(l.x, 5.0, l.z); });
+}
+
+/* ---------- メインループ ---------- */
+window.__game = { spawnTurnCar, spawnTailgater, spawnDebris, setWeather, WEATHERS, auto: true, P, cars, animals, hazards, riders, peds, addPed, SCN, spawnPedCross, spawnWalker, spawnPot, spawnSwHazard, spawnMama, applyBright, chunks, spawnAccident, accAnimal, accCarCar, spawnBoarFront, spawnPoleCrash, poles, obbOverlap, hitsCar, npcCollisions, sfx, ringBell, get actx() { return actx; }, horn, get bellCd() { return bellCd; }, set bellCd(v) { bellCd = v; }, addAnimal, spawnHazard, spawnBehind, spawnOncoming, spawnChain, spawnReckless, spawnTruckTurn, spawnParked, toggleView, startGame, toTitle, reachGoal, GOAL, findInter, sigState, get T() { return T; }, set T(v) { T = v; } };
+let last = 0, flipRot = 0;
+window.__game.step = n => { for (let i = 0; i < n; i++) tick(last + 16.7); };
+renderer.setAnimationLoop(tick);
+function tick(t) {
+  const dt = Math.max(0, Math.min(0.05, last ? (t - last) / 1000 : 0.016)); last = Math.max(last, t);
+  if (paused) { renderer.render(scene, camera); return; }
+  T += dt; if (bellCd > 0) bellCd -= dt;
+  if (P.state === 'play' && selfPhys) {              // 安全策: 操作できる状態なのに倒れた体が残っていたら解除する
+    for (const r of selfRecs) physRemoveRec(r);
+    selfRecs = []; selfPhys = false; selfRider.userData.flat = false; resetRiderPose(selfRider); selfFall.ft = 0; selfFall.bs = null;
+  }
+  updateWeather(dt); updateGlare(dt);
+  if (P.state === 'play' || P.state === 'ready') { debrisT -= dt; if (debrisT <= 0) { debrisT = rnd(16, 28) * (W.storm ? 0.6 : 1); if (P.state === 'play') spawnDebris(); } }
+  const inp = readInput();
+  if (P.demo) { if (P.mode === 'bike' && (P.state === 'play' || P.state === 'down' || P.state === 'ready')) demoAI(inp); inp.startBike = inp.startDrive = false; if (P.state === 'dead' && P.deadT > 2.2 || P.state === 'goal' && P.goalT > 3) { startDemo(); return; } }
+  if (P.state === 'play') { P.time += dt; if (P.speed > P.maxV) P.maxV = P.speed; if (P.course !== 'free' && P.z <= -GOAL) reachGoal(); }
+  if (P.state === 'ready') {                       // 3・2・1・GO!
+    P.readyT -= dt; countEl.style.display = 'block'; countEl.textContent = Math.max(1, Math.ceil(P.readyT / 0.8));
+    if (P.readyT <= 0) { P.state = 'play'; P.goT = 0.7; countEl.textContent = 'GO!'; }
+  } else if (P.goT > 0) { P.goT -= dt; if (P.goT <= 0) countEl.style.display = 'none'; }
+  uiTick();
+  if (P.state === 'title' || P.state === 'replay' || (P.state === 'goal' && P.goalT > 0.8) || (P.state === 'dead' && P.deadT > 1.5)) {
+    if (inp.startDrive) startGame('drive'); else if (inp.startBike) startGame('bike');
+  }
+  if (P.state === 'dead' && P.deadT > 2.4) enterReplay();
+  if (P.state === 'replay') {
+    replayTick(dt, inp);
+    assignLights(); sky.position.set(rig.position.x, 0, rig.position.z);
+    if (windGain) windGain.gain.value = 0;
+    camera.rotation.set(pitch, RP.yawFace + lookOff, 0, 'YXZ');
+    renderer.render(scene, camera);
+    return;
+  }
+  if (inp.toggle) toggleView();
+  if (inp.look) { lookBack = !lookBack; yaw = lookBack ? Math.PI : 0; }
+
+  if (P.state === 'play' && P.mode === 'bike' && P.walk) {           // 降りて自転車を押して歩く
+    const back = keys.KeyS || keys.ArrowDown, target = back ? -1.4 : inp.boost ? 2.2 : 0;
+    P.speed += clamp(target - P.speed, -6 * dt, 6 * dt);
+    P.psi = 0; P.signal = '';
+    P.x = clamp(P.x + inp.steer * 1.5 * dt, -4.85, 4.85);
+    P.sw = P.x < -3.52;
+    const dz = P.speed * dt; P.z -= dz; P.dist += dz;
+    staticPlayerHits();
+    checkTraffic(P.z + dz);
+    if (window.__game.auto) bikeDirector(dt, Math.min(1, Math.max(0, P.dist) / 600));
+  } else if (P.state === 'play' && P.mode === 'bike') {
+    const target = Math.min(inp.brake ? 0 : inp.boost ? 11 : 6, P.sw ? 3.5 : 99);      // 加速(W): 立ち漕ぎで11m/sまで。歩道は徐行(約12km/h)
+    if (P.speed < target) P.speed = Math.min(target, P.speed + (inp.boost ? 2.2 : 3.5) * dt);
+    else P.speed = Math.max(target, P.speed - (inp.brake ? (P.signal ? 5 : 9) * W.grip : P.sw ? 5 : 1.4) * dt);       // 片手運転・路面が滑るとブレーキは弱め
+    P.signal = keys.KeyQ ? 'left' : keys.KeyR ? 'right' : keys.KeyF ? 'stop' : '';
+    if (P.signal) P.sigT = 5; else if (P.sigT > 0) P.sigT -= dt;                // 手信号を出した後しばらくは、周囲が気付いて事故が少し減る
+    P.psi += (inp.steer * 0.6 * (P.signal ? 0.5 : 1) - P.psi) * Math.min(1, 8 * (0.45 + 0.55 * W.grip) * dt);       // 片手運転・滑る路面だとハンドル操作は鈍い
+    if (W.snow) {                                          // 雪・凍結: 下手にハンドルを切ると、切った方向へ滑り(ドリフト)、グリップが戻った瞬間に転倒する
+      const st = inp.steer, sl = P.slide || 0;
+      if (Math.abs(st) > 0.6 && P.speed > 4) P.slide = clamp(sl + st * dt * (P.speed / 5) * (1.4 - W.grip), -1.2, 1.2);
+      else P.slide = sl * Math.max(0, 1 - 1.3 * dt);
+      if (Math.abs(P.slide) > 0.3 && !P.slideWarn) { P.slideWarn = true; flashMsg('ドリフト!ハンドルを戻す・減速してグリップを待つ', '⚠️'); }
+      if (Math.abs(P.slide) < 0.12) P.slideWarn = false;
+      if (Math.abs(sl) > 0.55 && Math.abs(P.slide) <= Math.abs(sl) && Math.abs(P.slide) < 0.55 && P.speed > 4) {      // 滑っている最中にグリップが回復
+        const d = Math.sign(sl); P.slide = 0; goDown(d, '雪道でハンドルを切りすぎてドリフトし、グリップが戻った瞬間に転倒して後続車に轢かれた');      }
+    }
+    if (W.grip < 0.8 && !W.snow && P.speed > 8 && (Math.abs(inp.steer) > 0.9 || (inp.brake && P.speed > 9)) && Math.random() < dt * 0.9 * (0.8 - W.grip)) {   // 滑る路面で急ハンドル・急ブレーキ
+      goDown(inp.steer || 1, `${W.surf}路面でスリップして転倒し、後続車に轢かれた`);
+    }
+    const px0 = P.x;
+    if (P.wobT > 0) {                                      // 前輪が穴の縁にかかった: ハンドルをとられてふらつく
+      P.wobT -= dt; const k = Math.max(0, P.wobT);
+      P.x += Math.sin(T * 16 + 1) * 1.5 * k * dt; shakeAmp = Math.max(shakeAmp, 0.025 * k); P.speed = Math.max(0, P.speed - 3 * dt);
+      if (Math.abs(P.psi) > 0.35 && k > 0.3) goDown(Math.sign(P.psi) || 1, 'ふらついている時に急ハンドルを切って転倒し、後続車に轢かれた');
+    }
+    P.x = clamp(P.x + Math.sin(P.psi) * P.speed * dt + (P.slide || 0) * Math.min(P.speed, 9) * 0.3 * dt, -4.85, -0.5);       // 道路交通法: センターラインを越えて逆走はできない(左の歩道は走れる)
+    const wasSW = P.sw; P.sw = P.x < -3.52;
+    if (P.sw !== wasSW && P.speed > 3.2 && Math.abs(P.psi) < (wasSW ? 0.15 : 0.28))      // 縁石に浅い角度で乗り降りすると転ぶ
+      goDown(1, wasSW ? '縁石を浅い角度で降りようとして転倒し、後続車に轢かれた' : '縁石に浅い角度で乗り上げて転倒し、後続車に轢かれた');
+    if (P.state === 'play' && !P.walk && (px0 > -3.66) !== (P.x > -3.66))          // 歩道との間のガードパイプ
+      for (const g of chunks.values()) {
+        const rz = g.userData.rail; if (!rz) continue;
+        const lz = P.z - g.position.z;
+        if (rz.some(([a, b]) => lz >= a && lz <= b)) { goDown(px0 > -3.66 ? 1 : -1, '歩道との間のガードパイプ(ガードレール)に衝突して転倒し、後続車に轢かれた'); break; }
+      }
+    const dz = Math.cos(P.psi) * P.speed * dt, pz0 = P.z;
+    P.z -= dz; P.dist += dz; P.braking = inp.brake;
+    pedalUpdate(dt);
+    staticPlayerHits();
+    checkTraffic(pz0);
+    if (window.__game.auto) bikeDirector(dt, Math.min(1, P.dist / 600));
+    for (const g of chunks.values()) {
+      const pl = g.userData.pole, up = g.userData.upole;
+      if (pl && !pl.done && !P.walk && Math.abs(P.z - pl.z) < 0.3 && Math.abs(P.x - pl.x) < 0.32) { crash(pl, '街灯に激突！', CAUSE_POLE); break; }
+      if (up && !up.done && !P.walk && Math.abs(P.z - up.z) < 0.35 && Math.abs(P.x - up.x) < 0.4) { crash(up, '電柱に激突！', CAUSE_POLE); break; }
+    }
+  } else if (P.state === 'play' && P.mode === 'drive') {
+    const back = keys.KeyS || keys.ArrowDown;                              // 止まってSを押し続けるとバック(最大約11km/h)
+    if (back && P.speed <= 0.3) P.revT += dt; else if (!back) P.revT = 0;
+    const rev = back && (P.revT > 0.35 || P.speed < 0);
+    const target = inp.brake ? 0 : inp.boost ? 12.5 : 8;                  // 通常は徐行(約29km/h)。Wで加速(約45km/h)するほど危険
+    if (rev) { P.speed = Math.max(-3, P.speed - 2.2 * dt); revBeep(dt); }
+    else if (P.speed < target) P.speed = Math.min(target, P.speed + 2.6 * dt);
+    else P.speed = Math.max(target, P.speed - (inp.brake ? 8 * W.grip : 2) * dt);
+    P.psi += (inp.steer * 0.22 - P.psi) * Math.min(1, 6 * dt);
+    // 対向車線に出られるのは合計5秒まで(追い越し用)。時間切れになると、自動で元の車線へ戻される。自分の車線に3秒戻ると回復する
+    const nx = P.x + Math.sin(P.psi) * P.speed * dt;
+    if (P.laneT <= 0) {
+      if (!P.laneMsg && P.x > -0.3) { P.laneMsg = true; flashMsg('対向車線は5秒まで…元の車線へ戻ります'); }
+      P.x = P.x > -0.3 ? Math.max(-0.3, P.x - 3.5 * dt) : clamp(nx, -2.45, -0.3);
+    } else {
+      P.x = clamp(nx, -2.45, 2.45);
+      if (P.x > -0.3) P.laneT = Math.max(0, P.laneT - dt);
+    }
+    if (P.x < -0.9) { P.laneBack += dt; if (P.laneBack > 3) { P.laneT = 5; P.laneMsg = false; } } else P.laneBack = 0;
+    const dz = Math.cos(P.psi) * P.speed * dt;
+    // 赤信号で停止線を越えたら違反
+    const sg = nextSignal(front(), -1);
+    if (sg.i !== P.lineI && P.lineI && P.lineS < 3 && sigState(P.lineI) === 'r') {       // 赤信号の無視: 必ず事故になるわけではないが、交差道路の車が来て事故になる確率が高い
+      if (Math.random() < 0.7) violationCar(P.lineI, '赤信号を無視して交差点に進入し、交差道路の車と衝突した');
+      else { P.near++; flashMsg('赤信号を無視…運よく車が来なかった(信号無視は違反)', '⚠️'); }
+    }
+    P.lineI = sg.i; P.lineS = sg.s;
+    P.z -= dz; P.dist += dz;
+    if (P.state === 'play' && window.__game.auto) driveDirector(dt);
+  } else if (P.state === 'goal') {                 // ゴール後は惰性で停止
+    P.goalT += dt; P.speed = Math.max(0, P.speed - 3 * dt); P.psi *= Math.max(0, 1 - 3 * dt);
+    P.z -= P.speed * dt;
+  } else if (P.state === 'down') {
+    P.fallT += dt;
+    if (!selfPhys) P.x += clamp(P.downX - P.x, -4 * dt, 4 * dt);
+    if (P.fallT >= 5) {                                  // 5秒たつと自力で起き上がり、自転車を起こして走り出せる
+      for (const r of selfRecs) physRemoveRec(r);
+      selfRecs = []; selfPhys = false; selfRider.userData.flat = false;
+      resetRiderPose(selfRider); selfFall.ft = 0; selfFall.bs = null;
+      for (const c of cars) c.seekDown = false;
+      P.x = clamp(P.x, -4.85, -0.5); P.sw = P.x < -3.52;
+      P.state = 'play'; P.speed = 0; P.psi = 0; P.wobT = 0; P.fallT = 0; P.signal = '';
+      flashMsg('起き上がった!後続車に注意して再出発', '💪');
+    }
+  } else if (P.state === 'dead') {
+    P.fallT += dt; P.deadT += dt;
+    flash.material.opacity = Math.max(0, 0.5 * (1 - P.deadT / 1.2));
+  }
+  const fallen = P.mode === 'bike' && (P.state === 'dead' || P.state === 'down');
+  const fallK = fallen ? Math.min(1, P.fallT / (P.fallStyle === 'flip' ? 1.2 : 0.7)) : 0, fallE = 1 - (1 - fallK) * (1 - fallK);
+  flipRot = 0;
+  if (selfPhys && selfRecs[1]) { const b = selfRecs[1].body.position; P.x = b.x; P.z = b.z; }       // 当たり判定は、物理で転がった体の位置を使う
+
+  ensureChunks(P.z);
+  updateSignals(dt);
+
+  for (let i = animals.length - 1; i >= 0; i--) {
+    const a = animals[i];
+    if (a.fly) {                                           // 車にはねられて宙を舞う
+      const f = a.fly;
+      if (f.phys) { if (f.rec) { a.x = f.rec.body.position.x; a.z = f.rec.body.position.z; } }
+      else {
+        f.vy -= 9.8 * dt; a.x += f.vx * dt; a.z += f.vz * dt;
+        const y = a.g.position.y + f.vy * dt;
+        if (y <= 0.16 || f.landed) {
+          if (!f.landed) { f.landed = true; a.g.rotation.set(0, a.g.rotation.y, 1.5); smashSound(); }
+          a.g.position.set(a.x, 0.2, a.z); f.vx *= Math.max(0, 1 - 4 * dt); f.vz *= Math.max(0, 1 - 4 * dt);
+        } else { a.g.position.set(a.x, y, a.z); a.g.rotation.x += f.sp * dt; }
+      }
+      if (a.z > P.z + 40) { if (f.rec) physRemoveRec(f.rec); scene.remove(a.g); animals.splice(i, 1); }
+      continue;
+    }
+    const held = !!a.holdUntil && T < a.holdUntil;                  // ベルで足を止めている間
+    if (!a.vx && !a.manual && !held && P.state === 'play') {
+      if (!a.cued && P.z > a.z && P.z - a.z < 38) { a.cued = true; sfx('rustle', a.x, 0.5, a.z, 1.0); warnHint('歩道際で茂みや物音(動物の気配)'); }
+      const tt = (P.z - a.z) / Math.max(P.speed, 1);
+      if (tt <= Math.abs(a.x - P.x) / a.v + a.jit) { a.vx = -a.side * a.v; sfx(a.deer ? 'cry' : 'growl', a.x, 1, a.z, 0.9); }
+    }
+    for (const e of a.eyes) e.scale.setScalar(0.32 + 0.05 * Math.sin(t * 0.008 + a.z));
+    if (a.head && !a.scared && P.mode === 'drive' && P.speed <= SAFE_V && !a.veer && P.z - a.z < 18) { a.veer = true; a.vx = a.x >= P.x ? 3 : -3; }   // 徐行なら、イノシシは車を避けて脇へそれる
+    if (a.head && !held && !a.scared && P.state === 'play' && P.z - a.z > 12) a.x += clamp(P.x - a.x, -a.v * dt, a.v * dt);       // 突進しながら少しずつこちらへ寄ってくる
+    if (!held) { a.x += a.vx * dt; a.z += a.vz * dt; }
+    a.g.position.set(a.x, ((a.vx || a.vz) && !held) ? Math.abs(Math.sin(t * 0.014)) * 0.12 : 0.16, a.z);
+    if (P.mode === 'bike') { if (P.state === 'play' && Math.abs(a.x - P.x) < 0.95 && Math.abs(a.z - P.z) < 0.6) knock(a); }
+    else if (P.state === 'play') {
+      if (Math.abs(a.x - P.x) < 1.3 && Math.abs(a.z - P.z) < 2.6) { a.vx = a.vz = 0; endDrive(a.hitTitle || '動物と衝突した', a.sub || 'これは運転者の過失'); }
+      else if (!a.passed && a.z > P.z + 5) { a.passed = true; if (a.scn) P.near++; }
+    }
+    if ((a.vx && Math.abs(a.x) > 5.2) || a.z > P.z + 40) { scene.remove(a.g); animals.splice(i, 1); }
+  }
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    const h = hazards[i]; h.update(dt);
+    if (h.z > P.z + 40) { scene.remove(h.g); hazards.splice(i, 1); }
+  }
+  updatePeds(dt);
+  accCollisions(); npcCollisions(); updatePoles(dt);
+  stepPhysics(dt);
+  // ドライバーモードの自転車
+  for (let i = riders.length - 1; i >= 0; i--) {
+    const r = riders[i];
+    if (r.holdUntil) { if (T < r.holdUntil) { r.vx = r.vz = 0; } else { r.holdUntil = 0; r.vx = r.sv[0]; r.vz = r.sv[1]; } }
+    else if (r.update && P.state === 'play') r.update(dt);
+    if (r.falling) {
+      r.fall = Math.min(1, r.fall + dt / 0.45);
+      if (r.style === 'hit') { const fr = Math.max(0, 1 - 2.5 * dt); r.vx *= fr; r.vz *= fr; }      // はね飛ばされた後、減速しながら滑る
+      else if (r.fall >= 1) { r.vx = 0; r.vz = 0; }
+    }
+    const rBlocked = !r.falling && (r.vx || r.vz) && pathBlocked(r.x, r.z, r.vx, r.vz, 0.4);     // NPCの車の前には出ない
+    if (!rBlocked) { r.x += r.vx * dt; r.z += r.vz * dt; }
+    const sp = rBlocked ? 0 : Math.hypot(r.vx, r.vz);
+    if (sp > 0.3 && !r.falling) { r.yaw = Math.atan2(-r.vx, -r.vz); r.ph += sp * dt * 2.2; r.g.userData.anim(r.ph); }
+    if (!r.rp) { r.g.position.set(r.x, 0, r.z); r.g.rotation.set(0, r.yaw, 0); }
+    if (r.falling && !r.rp) animRiderFall(r, dt);
+    if (r.rp) { r.x = r.rp.body.position.x; r.z = r.rp.body.position.z; r.vx = r.vz = 0; }       // 物理で飛んだ体の位置に合わせる
+    if (P.state === 'play' && P.mode === 'drive') {
+      const reach = r.rp ? r.x : r.x + r.fallDir * 1.2 * r.fall;       // 倒れ込んだ体の先端
+      const lo = Math.min(r.x, reach), hi = Math.max(r.x, reach), dxm = P.x < lo ? lo - P.x : P.x > hi ? P.x - hi : 0;
+      if (dxm < 0.9 + 0.25 && Math.abs(r.z - P.z) < 2.2 + 0.45) {
+        r.fallDir = Math.sign(r.x - P.x) || 1; r.ft = 0; r.bs = null;
+        hitRider(r, Math.sin(P.psi) * P.speed * 0.9 + (r.x - P.x) * 1.2, -P.speed * 0.9);       // 自転車ごと跳ね飛ばされる(速いほど遠く・高く)
+        if (r.scn === 'stopped' && P.speed > 0.5) endDrive('前方から来たながらスマホの自転車と衝突した', '相手は前を見ていなかった');
+        else endDrive(r.title, r.sub);
+      } else if (!r.passed && r.z > P.z + 5) r.passed = true;
+      if (r.passed && !r.counted && r.scn && r.scn !== 'normal') { r.counted = true; P.near++; }
+    }
+    if (r.z > P.z + 45 || Math.abs(r.x) > 40 || r.z < P.z - 220) { if (r.rb) physRemoveRec(r.rb); if (r.rp) physRemoveRec(r.rp); scene.remove(r.g); riders.splice(i, 1); }
+  }
+  // 車
+  for (let i = cars.length - 1; i >= 0; i--) {
+    const c = cars[i];
+    updateCar(c, dt);
+    const rx = c.x - P.x, rz = c.z - P.z, dist = Math.hypot(rx, rz);
+    const vx = -Math.sin(c.yaw) * c.v, vz = -Math.cos(c.yaw) * c.v - (P.state === 'play' ? -P.speed : 0);
+    const closing = -(vx * rx + vz * rz) / Math.max(dist, 0.1);
+    if (c.snd) { setPanner(c.snd.p, c.x, 0.6, c.z); c.snd.o.frequency.value = (c.snd.base + c.v * 2.6) * 343 / (343 - clamp(closing, -80, 80)); }
+    if (P.mode === 'bike') bikeCollide(c); else if (P.state === 'play') driveCollide(c);
+    if (dist > (c.acc ? 300 : 170) || (c.z > P.z + 60 && (c.kind === 'parked' || c.kind === 'rtwait' || c.kind === 'oncoming' || c.kind === 'acc'))) { removeCar(c); cars.splice(i, 1); }
+  }
+
+  // 視点
+  if (view === 'car' && (viewCar.gone || (P.state === 'play' && viewCar.z < P.z - 30))) setBikeView();
+  selfRider.visible = P.mode === 'bike' && view === 'car'; bars.visible = P.mode === 'bike' && view === 'bike';
+  if (P.mode === 'bike') {
+    if (!selfPhys) { selfRider.position.set(P.x, 0, P.z); selfRider.rotation.set(0, -P.psi, 0); }
+    if (!!P.walk !== selfWalk) { selfWalk = !!P.walk; selfRider.userData.setWalk(selfWalk); if (!selfWalk) selfRider.userData.setSignal(selfSig); }
+    for (const h of bars.userData.hands) h.visible = selfWalk;
+    if (selfSig !== P.signal) { selfSig = P.signal; selfRider.userData.setSignal(selfSig); }
+    if (P.signal !== lastSigView) setSignalView(P.signal);
+    sigG.visible = !!P.signal && view === 'bike' && !fallen;
+    if (selfPhys) for (const r of selfRecs) r.obj.visible = view === 'car';        // 一人称では自分の体は見えない(視点は体と一緒に転がる)
+    if (fallen) { if (!selfPhys) { selfFall.fallDir = P.fallDir; selfFall.style = P.fallStyle; animRiderFall(selfFall, dt); } }
+    else {
+      if (selfFall.ft) { selfFall.ft = 0; selfFall.bs = null; resetRiderPose(selfRider); }
+      if (P.state === 'play') { if (selfWalk) selfRider.userData.walk(P.dist * 3.2); else selfRider.userData.anim(P.dist * 2.2); }
+    }
+  }
+  if (P.mode === 'drive') {
+    myCar.position.set(P.x, 0, P.z); myCar.rotation.y = -P.psi * 0.5; myCar.userData.wheel.rotation.z = -P.psi * 6;
+    rig.rotation.set(0, 0, 0); rig.position.set(P.x + 0.38, rigYCar, P.z - 0.15);
+  } else if (view === 'car') {
+    rig.rotation.set(0, 0, 0); rig.position.set(viewCar.x + 0.38, rigYCar, viewCar.z - 0.15);
+  } else {
+    const flip = fallen && P.fallStyle === 'flip';           // 穴に落ちた時は前転(視界がぐるっと回り、穴の底で空を見上げる)
+    rig.position.set(P.x, rigYBike + (flip ? 0.5 * Math.sin(Math.PI * fallE) - 0.9 * fallE : 0) + (selfWalk && !fallen ? Math.abs(Math.sin(P.dist * 3.2)) * 0.035 * Math.min(1, Math.abs(P.speed)) : 0), P.z);      // 歩く時の上下の揺れ
+    rig.rotation.set(0, 0, flip ? 0 : -P.fallDir * 1.0 * fallE);
+    flipRot = flip ? -1.5 * Math.PI * fallE : 0;
+    if (selfPhys && selfRecs[1]) {                        // 一人称: 投げ出された体と一緒に視界が回転し、転がって止まる
+      const bq = selfRecs[1].body.quaternion, bp = selfRecs[1].body.position, q = new THREE.Quaternion(bq.x, bq.y, bq.z, bq.w);
+      const head = new THREE.Vector3(0, 0.7, -0.2).applyQuaternion(q).add(new THREE.Vector3(bp.x, bp.y, bp.z));
+      rig.quaternion.copy(q); rig.position.copy(head).sub(new THREE.Vector3(0, 1.5, 0).applyQuaternion(q));
+    }
+    bars.rotation.y = -P.psi;
+  }
+  assignLights();
+  sky.position.set(rig.position.x, 0, rig.position.z);
+
+  if (windGain) windGain.gain.value = P.state === 'play' ? Math.min(0.14, P.speed * 0.014) : 0;
+  updateListener();
+  drawPanel();
+  camera.rotation.set(pitch + flipRot + (Math.random() - 0.5) * shakeAmp, yaw + (Math.random() - 0.5) * shakeAmp, 0, 'YXZ'); shakeAmp *= 0.85;
+  if (P.state === 'play' || P.state === 'down' || (P.state === 'dead' && P.deadT < 0.7)) recordFrame();
+  updateMirror();
+  renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
