@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>無灯火ナイトライド</title>
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,"Yu Gothic",sans-serif;color:#cfd6e4}
@@ -43,6 +43,7 @@
   #hud .r{font-size:14px;color:#cfe0ff}
   #hud .r b{color:#fff;font-variant-numeric:tabular-nums}
   #count{position:fixed;z-index:6;left:50%;top:38%;transform:translate(-50%,-50%);font:800 120px/1 system-ui,sans-serif;color:#ffd36b;text-shadow:0 0 24px #000;display:none;pointer-events:none}
+  html,body{touch-action:manipulation;-webkit-touch-callout:none}
   #touch{display:none;position:fixed;inset:0;z-index:7;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
   #touch .tb{position:absolute;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;background:rgba(20,30,60,.55);border:2px solid rgba(160,190,255,.5);border-radius:16px;color:#fff;font-size:15px;font-weight:700;text-shadow:0 0 4px #000;-webkit-tap-highlight-color:transparent}
   #touch .tb.on{background:rgba(80,130,230,.75)}
@@ -100,6 +101,15 @@
   const touchy = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
   if (!touchy) return;
   document.body.classList.add('touch');
+  // ダブルタップ/ピンチ拡大・長押しメニューを抑止（iOS Safari対策）
+  ['gesturestart','gesturechange','gestureend','dblclick','contextmenu'].forEach(ev =>
+    document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+  let lastTE = 0;
+  document.addEventListener('touchend', e => {
+    const n = Date.now();
+    if (n - lastTE < 350) e.preventDefault();
+    lastTE = n;
+  }, { passive: false });
   const el = document.getElementById('touch');
   const fire = (t, c) => dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true }));
   el.querySelectorAll('.tb').forEach(b => {
