@@ -1768,14 +1768,14 @@ function spawnHazard() {
     } });
   } else if (r < 0.44) {
     spawnParked(z);
-  } else if (r < 0.62) {            // 落とし穴1: ふたのないマンホール(暗くて見えない)
+  } else if (r < 0.56) {            // 落とし穴1: ふたのないマンホール(暗くて見えない)
     const x = rnd(-3.0, -0.9);
     const hole = new THREE.Mesh(new THREE.CircleGeometry(0.4, 20), holeMat); hole.rotation.x = -Math.PI / 2; hole.position.set(x, 0.014, z); g.add(hole);
     const rim = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.52, 20), manholeMat); rim.rotation.x = -Math.PI / 2; rim.position.set(x, 0.012, z); g.add(rim);
     addCone(g, x - 0.7, z + 0.6); addCone(g, x + 0.7, z + 0.6);      // 警告灯の目印
     const mst = { w: false };
     addHazard({ g, z, update() { engageHole(holeDepthRound(x, z, 0.4), mst, x, 'ふたのないマンホールに前輪がぴったりはまり、前転して転落', CAUSE_POLE); } });
-  } else if (r < 0.8) {             // 落とし穴2: 予兆(ひび割れ・地鳴り・揺れ・小石・砂ぼこり)のあと、路面が崩れる
+  } else if (r < 0.63) {            // 落とし穴2: 予兆(ひび割れ・地鳴り・揺れ・小石・砂ぼこり)のあと、路面が崩れる
     const w = rnd(1.5, 2.0), l = rnd(2.2, 3.0), cx = rnd(-2.6, -1.3);
     const cr = new THREE.Mesh(unitPlane, crackMat); cr.rotation.x = -Math.PI / 2; cr.scale.set(w + 0.9, l + 0.9, 1); cr.position.set(cx, 0.014, z); g.add(cr);
     const pit = box(holeMat, w, 0.03, l, cx, 0.022, z, g), rim = box(curbMat, w + 0.3, 0.02, l + 0.3, cx, 0.012, z, g);
@@ -1796,7 +1796,7 @@ function spawnHazard() {
       if (st === 3) wobbleCheck(holeDepthRect(cx, z, w / 2, l / 2), wst);
       if (st === 3 && P.state === 'play' && holeDepthRect(cx, z, w / 2, l / 2) > 0.1) crash({ x: cx, style: 'flip' }, '突然路面が陥没し、前転して落とし穴に転落', ['頸椎骨折(頸髄損傷)', '多発外傷(全身打撲)', '頭蓋骨骨折・脳挫傷']);
     } });
-  } else if (r < 0.9) {
+  } else if (r < 0.82) {
     spawnMama(false);
   } else {
     const b = makeRider({ dark: true }); b.rotation.y = Math.PI;
@@ -2138,7 +2138,7 @@ function hitPit(c) {
 }
 function spawnAccident() {
   const k = Math.random();
-  if (k < 0.28) accAnimal(false); else if (k < 0.43) accAnimal(true); else if (k < 0.65) accPit(); else if (!accCarCar()) accAnimal(false);
+  if (k < 0.28) accAnimal(false); else if (k < 0.43) accAnimal(true); else if (k < 0.5) accPit(); else if (!accCarCar()) accAnimal(false);
 }
 const spawnChain = spawnAccident;
 function spawnBoarFront() {         // イノシシが暗闇から突然、正面に突進してくる
