@@ -43,6 +43,19 @@
   #hud .r{font-size:14px;color:#cfe0ff}
   #hud .r b{color:#fff;font-variant-numeric:tabular-nums}
   #count{position:fixed;z-index:6;left:50%;top:38%;transform:translate(-50%,-50%);font:800 120px/1 system-ui,sans-serif;color:#ffd36b;text-shadow:0 0 24px #000;display:none;pointer-events:none}
+  #touch{display:none;position:fixed;inset:0;z-index:7;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
+  #touch .tb{position:absolute;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;background:rgba(20,30,60,.55);border:2px solid rgba(160,190,255,.5);border-radius:16px;color:#fff;font-size:15px;font-weight:700;text-shadow:0 0 4px #000;-webkit-tap-highlight-color:transparent}
+  #touch .tb.on{background:rgba(80,130,230,.75)}
+  #touch .big2{width:84px;height:84px;font-size:30px;bottom:calc(18px + env(safe-area-inset-bottom))}
+  #touch .sm{width:54px;height:40px;font-size:12px;border-radius:10px}
+  body.touch #info{display:none!important}
+  body.touch #result{right:50%;transform:translate(50%,-50%);width:min(370px,94vw)}
+  body.touch #menu{padding:12px 14px}
+  body.touch #menu h1{font-size:22px}
+  body.touch #hud .t{font-size:26px}
+  body.touch #hud .bar{width:min(260px,70vw)}
+  body.touch #hud .r{font-size:12px}
+  body.touch #warn{top:84px;font-size:13px;white-space:normal;width:86vw;text-align:center}
 </style>
 <script type="importmap">
 {"imports":{
@@ -68,6 +81,42 @@
   <div id="tabBody"></div>
 </div>
 <div id="result" class="card"></div>
+<div id="touch">
+  <div class="tb big2" data-k="KeyA" style="left:14px">◀</div>
+  <div class="tb big2" data-k="KeyD" style="left:112px">▶</div>
+  <div class="tb big2" data-k="KeyS" style="right:112px;font-size:14px">ブレーキ</div>
+  <div class="tb big2" data-k="KeyW" style="right:14px;font-size:14px">加速</div>
+  <div class="tb sm" data-t="KeyE" style="right:14px;bottom:calc(116px + env(safe-area-inset-bottom))">🔔ベル</div>
+  <div class="tb sm" data-t="KeyX" style="right:76px;bottom:calc(116px + env(safe-area-inset-bottom))">降/乗</div>
+  <div class="tb sm" data-t="KeyV" style="right:14px;bottom:calc(164px + env(safe-area-inset-bottom))">視点</div>
+  <div class="tb sm" data-t="KeyB" style="right:76px;bottom:calc(164px + env(safe-area-inset-bottom))">後ろ</div>
+  <div class="tb sm" data-k="KeyQ" style="left:14px;bottom:calc(116px + env(safe-area-inset-bottom))">←手</div>
+  <div class="tb sm" data-k="KeyR" style="left:76px;bottom:calc(116px + env(safe-area-inset-bottom))">→手</div>
+  <div class="tb sm" data-k="KeyF" style="left:138px;bottom:calc(116px + env(safe-area-inset-bottom))">止手</div>
+  <div class="tb sm" data-t="Escape" style="left:12px;top:12px;width:44px">⏸</div>
+</div>
+<script>
+(function(){
+  const touchy = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+  if (!touchy) return;
+  document.body.classList.add('touch');
+  const el = document.getElementById('touch');
+  const fire = (t, c) => dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true }));
+  el.querySelectorAll('.tb').forEach(b => {
+    const hold = b.dataset.k, tap = b.dataset.t;
+    b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); b.classList.add('on'); if (hold) fire('keydown', hold); else fire('keydown', tap); });
+    const up = e => { b.classList.remove('on'); if (hold) fire('keyup', hold); else fire('keyup', tap); };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  });
+  // メニュー/結果表示中は操作ボタンを隠し、準備中だけスタートボタンを出す
+  setInterval(() => {
+    const m = document.getElementById('menu'), r = document.getElementById('result');
+    const hide = (m && m.style.display === 'block') || (r && r.style.display === 'block');
+    el.style.display = hide ? 'none' : 'block';
+  }, 150);
+})();
+</script>
 <div id="info">
   <b>操作</b> A/D=ハンドル W=加速 S/Space=ブレーキ <b>E=ベル/クラクション</b>(遠くから鳴らすほど、前方の人や自転車が止まりやすい) <b>X=自転車を降りる/乗る</b>(降りれば倒れた自転車や事故現場の脇を押して通過でき、右側も歩ける。Sで後退) <b>車はSを止まって押し続けるとバック</b> B=後ろを向く V=後続車視点(自転車) ドラッグ=見回し <b>Q/R/F=手信号</b>(左/右/停止。片手運転で操作は鈍るが、周囲の車が気付いて事故が少し減る) 車: 時速30km以下なら飛び出しは起きない・対向車線は5秒まで<br>
   <b>自転車</b>: 白線の外側(左端)を走る。止まれ・赤信号は守る。左の歩道も走れる(徐行のみ・縁石へは深い角度で。ガードパイプのある所は入れない) ／ <b>車</b>: 赤信号は止まる。自転車や歩行者が「回避不可能」な形で現れる
