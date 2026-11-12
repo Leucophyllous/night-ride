@@ -1653,7 +1653,7 @@ function spawnMama(sw) {            // 逆走してくるママチャリ(車道�
       sq -= dt; if (sq <= 0) { sq = 0.55; sfx('squeak', x, 0.5, bz, 0.7); }
       if (!belled && dd < 22) { belled = true; sfx('bell', x, 1.1, bz, 1.0); warnHint('前方から「チリンチリン」…自転車のベルときしみ音'); }
     }
-    if (P.state === 'play' && Math.abs(P.x - x) < 0.55 && Math.abs(P.z - bz) < 0.75) {
+    if (P.state === 'play' && Math.abs(P.x - x) < 0.42 && Math.abs(P.z - bz) < 0.65) {
       slide = -P.speed * 0.5; topple(Math.sign(P.x - x) || 1);                          // 衝突でこちらも倒れ、勢いで滑る
       crash({ x }, sw ? '歩道を逆走してきたママチャリと正面衝突' : '無灯火で逆走してきたママチャリと正面衝突', CAUSE_HIT);
     }
@@ -1810,7 +1810,7 @@ function spawnHazard() {
       h.z = bz; b.position.set(x, 0, bz); b.rotation.z = held ? 0 : Math.cos(wob) * 0.12; if (!held) b.userData.anim(ph);
       const dd = P.z - bz;
       if (P.state === 'play' && !held && dd > 0 && dd < 36) { sq -= dt; if (sq <= 0) { sq = 0.5; sfx('squeak', x, 0.5, bz, 0.7); } }   // 音の合図: チェーンのきしみ
-      if (P.state === 'play' && Math.abs(P.x - x) < 0.5 && Math.abs(P.z - bz) < 0.7) crash({ x }, '無灯火の逆走自転車と正面衝突', CAUSE_HIT);
+      if (P.state === 'play' && Math.abs(P.x - x) < 0.38 && Math.abs(P.z - bz) < 0.6) crash({ x }, '無灯火の逆走自転車と正面衝突', CAUSE_HIT);
     } };
     h.bell = ok => { if (ok) { holdUntil = T + 3.5; return '逆走自転車が止まった!'; } return '逆走自転車は気付かない…'; };
     addHazard(h);
