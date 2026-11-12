@@ -1527,7 +1527,9 @@ function updatePeds(dt) {
     }
     if (p.holdUntil) { if (T < p.holdUntil) { p.vx = p.vz = 0; } else { p.holdUntil = 0; p.vx = p.sv[0]; p.vz = p.sv[1]; } }   // ベルで立ち止まる
     else if (p.update && P.state === 'play') p.update(dt);
-    const blocked = (p.vx || p.vz) && pathBlocked(p.x, p.z, p.vx, p.vz, 0.35);       // 走ってくる車の前には出ない(待つ)
+    let blocked = (p.vx || p.vz) && pathBlocked(p.x, p.z, p.vx, p.vz, 0.35);       // 走ってくる車の前には出ない(待つ)
+    p.blkT = blocked ? (p.blkT || 0) + dt : 0;
+    if (p.blkT > 2.5) blocked = false;                                              // デッドロック対策: 長く待ったら歩き出す(車の方が止まる)
     if (!blocked) { p.x += p.vx * dt; p.z += p.vz * dt; }
     const sp = blocked ? 0 : Math.hypot(p.vx, p.vz);
     if (sp > 0.2) { p.ph += sp * dt * 4.5; p.g.userData.swing(p.ph); p.g.rotation.y = Math.atan2(-p.vx, -p.vz); }
@@ -1642,9 +1644,9 @@ function spawnMama(sw) {            // 逆走してくるママチャリ(車道�
     const held = falling || T < holdUntil;
     if (!held) { bz += v * dt; wob += dt * 2.2; ph += dt * 6; }
     h.z = bz;
-    const x = bx + (umb || !lit ? Math.sin(wob) * 0.35 : 0); h.x = x;                  // 傘さし・無灯火はふらつく
+    const x = bx + Math.sin(wob) * (umb || !lit ? 0.5 : 0.3) * (1 + 0.4 * Math.sin(wob * 0.37)); h.x = x;   // 野良自転車はふらふら蛇行する(傘さし・無灯火は特に大きい)
     if (falling) { fallK = Math.min(1, fallK + dt / 0.4); bz += slide * dt; slide *= Math.max(0, 1 - 3 * dt); }     // 倒れながら路面を滑る
-    b.position.set(x, (sw ? 0.16 : 0) + 0.15 * fallK, bz); b.rotation.z = fallDir * 1.45 * fallK;
+    b.position.set(x, (sw ? 0.16 : 0) + 0.15 * fallK, bz); b.rotation.z = fallDir * 1.45 * fallK + (held ? 0 : Math.cos(wob) * 0.12);   // ふらつきに合わせて車体も傾く
     if (!held) b.userData.anim(ph);
     const dd = Math.hypot(P.x - x, P.z - bz);
     if (P.state === 'play' && dd < 36 && !held) {                                      // 音の合図: チェーンのきしみ・ベル
@@ -1800,11 +1802,12 @@ function spawnHazard() {
     spawnMama(false);
   } else {
     const b = makeRider({ dark: true }); b.rotation.y = Math.PI;
-    const x = rnd(-3.2, -2.9); let bz = P.z - 55, ph = 0, holdUntil = 0, sq = 0; g.add(b);
-    const h = { g, z: bz, x, mult: 0.9, update(dt) {
+    const bx0 = rnd(-3.1, -2.4); let bz = P.z - 55, ph = 0, holdUntil = 0, sq = 0, wob = Math.random() * 6; g.add(b);
+    const h = { g, z: bz, x: bx0, mult: 0.9, update(dt) {
       const held = T < holdUntil;
-      if (!held) { bz += 5 * dt; ph += dt * 11; }
-      h.z = bz; b.position.set(x, 0, bz); if (!held) b.userData.anim(ph);
+      if (!held) { bz += 5 * dt; ph += dt * 11; wob += dt * 2.4; }
+      const x = bx0 + Math.sin(wob) * 0.45 * (1 + 0.4 * Math.sin(wob * 0.41)); h.x = x;        // ふらふら蛇行(無灯火の逆走自転車)
+      h.z = bz; b.position.set(x, 0, bz); b.rotation.z = held ? 0 : Math.cos(wob) * 0.12; if (!held) b.userData.anim(ph);
       const dd = P.z - bz;
       if (P.state === 'play' && !held && dd > 0 && dd < 36) { sq -= dt; if (sq <= 0) { sq = 0.5; sfx('squeak', x, 0.5, bz, 0.7); } }   // 音の合図: チェーンのきしみ
       if (P.state === 'play' && Math.abs(P.x - x) < 0.5 && Math.abs(P.z - bz) < 0.7) crash({ x }, '無灯火の逆走自転車と正面衝突', CAUSE_HIT);
@@ -2016,8 +2019,11 @@ function pedalClick() {
 /* ---------- 道路交通法(自転車): 一時停止・赤信号 ---------- */
 function violationCar(i, title) {
   const side = Math.random() < 0.5 ? -1 : 1, v = rnd(9, 12);
-  const c = addCar(P.x + side * v * (STOPD / Math.max(P.speed, 3) + rnd(0.2, 0.7)), chunkZ(i) + (side > 0 ? 2 : -2), side * Math.PI / 2, v, 'cross');
-  c.title = title;
+  const zc = chunkZ(i) + (side > 0 ? 2 : -2);
+  for (let k = 0; k < 2; k++) {                                   // 天罰: 狙いすましたように2台続けて突っ込んでくる(1台目を避けても2台目に捕まる)
+    const c = addCar(P.x + side * (v * (STOPD / Math.max(P.speed, 3) + rnd(0.2, 0.7)) + k * 14), zc + (k ? side * 0.01 : 0), side * Math.PI / 2, v, 'cross');
+    c.title = title; c.aim = zc; c.aimD = k * 1.2;
+  }
 }
 function checkTraffic(pz0) {
   for (const [i, g] of chunks) {
@@ -2029,8 +2035,7 @@ function checkTraffic(pz0) {
       u.vio = true;
       if (type === 'plain' && !u.ok) violationCar(i, '止まれを無視して交差点に進入し、出会い頭に衝突された');
       else if (type === 'signal' && sigState(i) === 'r') {
-        if (Math.random() < 0.7) violationCar(i, '赤信号を無視して交差点に進入し、車にはねられた');
-        else { P.near++; flashMsg('赤信号を無視…運よく車が来なかった(信号無視は違反)', '⚠️'); }
+        violationCar(i, '赤信号を無視して交差点に進入し、車にはねられた');
       }
     }
   }
@@ -2547,7 +2552,14 @@ function updateCar(c, dt) {
     const dir = Math.abs(c.yaw) < 1 ? -1 : 1, s = nextSignal(c.z + dir * c.hl, dir);
     if (s && s.s < 60 && s.s >= 0) { const st = sigState(s.i); if (st === 'r' || (st === 'y' && s.s > 8)) vt = Math.min(vt, Math.sqrt(8 * Math.max(s.s - 0.6, 0))); }
   }
-  const lim = avoidLimit(c);
+  if (c.aim != null && P.state === 'play') {                         // 信号無視への天罰: こちらが交差点に着くタイミングに合わせて突っ込んでくる
+    const side = Math.sign(Math.sin(c.yaw)) || 1, rem = (c.x - P.x) * side, tp = Math.max(P.z - c.aim, 0) / Math.max(P.speed, 2.5) + c.aimD;
+    if (rem > 1.5 && tp > 0.3) vt = clamp(rem / tp, 6, 19);
+  }
+  let lim = avoidLimit(c);
+  // デッドロック対策: 障害物の手前で長く止まったままの車は、そろりと動き出す(人・動物が相手なら長めに待つ)
+  if (lim < 1 && !c.acc && c.kind !== 'parked' && c.kind !== 'rtwait') { c.stallT = (c.stallT || 0) + dt; if (c.stallT > (c.limP < Infinity ? 12 : 5)) lim = Math.max(lim, 3); }
+  else c.stallT = 0;
   if (lim < vt) vt = lim;
   if (lim < c.v - 3 && !c.hornedPed && c.snd) { c.hornedPed = true; horn(c); }          // 急ブレーキとクラクション
   if (c.seekDown && P.state === 'down') c.x += clamp(P.x - c.x, -3 * dt, 3 * dt);      // 倒れた自転車に向かって走ってくる後続車
@@ -2845,8 +2857,7 @@ function tick(t) {
     // 赤信号で停止線を越えたら違反
     const sg = nextSignal(front(), -1);
     if (sg.i !== P.lineI && P.lineI && P.lineS < 3 && sigState(P.lineI) === 'r') {       // 赤信号の無視: 必ず事故になるわけではないが、交差道路の車が来て事故になる確率が高い
-      if (Math.random() < 0.7) violationCar(P.lineI, '赤信号を無視して交差点に進入し、交差道路の車と衝突した');
-      else { P.near++; flashMsg('赤信号を無視…運よく車が来なかった(信号無視は違反)', '⚠️'); }
+      violationCar(P.lineI, '赤信号を無視して交差点に進入し、交差道路の車と衝突した');
     }
     P.lineI = sg.i; P.lineS = sg.s;
     P.z -= dz; P.dist += dz;
